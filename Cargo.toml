@@ -1,0 +1,12 @@
+[workspace]
+members = [
+    "cmd",
+    "crates/*",
+]
+resolver = "2"
+
+[profile.release]
+opt-level = 3
+lto = true
+
+[workspace.dependencies]
