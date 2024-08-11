@@ -8,7 +8,9 @@ actix-web = { workspace = true }
 aws-sdk-s3 = { workspace = true }
 anyhow = { workspace = true }
 chrono = "0.4.38"
+helper = { path = "../../helper" }
 quick-xml = { version = "0.36.1", features = ["serialize"] }
-serde = { version = "1.0.205" }
+serde = { workspace = true }
 serde-xml-rs = "0.6.0"
-serde_derive = "1.0.205"
+serde_derive = { workspace = true }
+regex = "1.10.6"

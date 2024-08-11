@@ -13,5 +13,8 @@ pub use credential::*;
 mod api_router;
 pub use api_router::*;
 
-mod api_handlers;
-pub use api_handlers::*;
+mod bucket_handlers;
+pub use bucket_handlers::*;
+
+mod object_handlers;
+pub use object_handlers::*;
