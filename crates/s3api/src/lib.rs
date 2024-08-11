@@ -12,3 +12,6 @@ pub use credential::*;
 
 mod api_router;
 pub use api_router::*;
+
+mod api_handlers;
+pub use api_handlers::*;
