@@ -83,7 +83,7 @@ pub trait ObjectLayer {
         &self,
         bucket: String,
         credential: credential::Credential,
-    ) -> Result<types::Bucket, s3err::ApiErrorType>; // TODO: Return new datatype
+    ) -> Result<types::Bucket, s3err::ApiErrorCode>; // TODO: Return new datatype
     fn list_buckets(
         &self,
         credential: credential::Credential,

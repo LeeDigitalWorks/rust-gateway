@@ -1,5 +1,3 @@
-use actix_web::body::MessageBody;
-
 pub fn write_success_response(response: Vec<u8>) -> actix_web::HttpResponse {
     actix_web::HttpResponse::Ok()
         .insert_header(("Content-Length", response.len()))
@@ -7,22 +5,22 @@ pub fn write_success_response(response: Vec<u8>) -> actix_web::HttpResponse {
 }
 
 pub fn write_error_response(
-    req: actix_web::HttpRequest,
-    error: s3err::ApiErrorType,
+    req: &actix_web::HttpRequest,
+    error: s3err::ApiErrorCode,
 ) -> actix_web::HttpResponse {
     let mut w = actix_web::HttpResponseBuilder::new(error.status_code());
-    let (builder, handled) = write_error_response_headers(&mut w, &error);
+    let (builder, handled) = write_error_response_headers(&mut w, error);
     if !handled {
-        write_error_response_no_headers(builder, &error, req.path())
+        write_error_response_no_headers(builder, error, req.path())
     } else {
         w.into()
     }
 }
 
-pub fn write_error_response_headers<'a>(
-    w: &'a mut actix_web::HttpResponseBuilder,
-    error: &'a s3err::ApiErrorType,
-) -> (&'a mut actix_web::HttpResponseBuilder, bool) {
+pub fn write_error_response_headers(
+    w: &mut actix_web::HttpResponseBuilder,
+    error: s3err::ApiErrorCode,
+) -> (&mut actix_web::HttpResponseBuilder, bool) {
     let status = error.status_code();
     (w.status(status), false)
 
@@ -31,11 +29,11 @@ pub fn write_error_response_headers<'a>(
 
 pub fn write_error_response_no_headers(
     w: &mut actix_web::HttpResponseBuilder,
-    error: &s3err::ApiErrorType,
+    error: s3err::ApiErrorCode,
     resource: &str,
 ) -> actix_web::HttpResponse {
     let status = error.status_code();
-    let error_message = error.to_string();
+    let error_message = error.description();
     let error_response = format!(
         "<Error><Code>{}</Code><Message>{}</Message><Resource>{}</Resource></Error>",
         status.as_str(),

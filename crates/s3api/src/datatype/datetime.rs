@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 
-const ISO_8601_FORMAT: &str = "%Y-%m-%dT%H:%M:%S%.3fZ";
-const YYYY_MM_DD: &str = "%Y%m%d";
+pub const ISO_8601_FORMAT: &str = "%Y-%m-%dT%H:%M:%S%.3fZ";
+pub const YYYY_MM_DD: &str = "%Y%m%d";
 
 static AMZ_DATE_FORMATS: &'static [&str] = &[ISO_8601_FORMAT];
 

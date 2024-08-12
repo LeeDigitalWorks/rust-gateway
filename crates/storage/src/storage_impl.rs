@@ -123,7 +123,7 @@ impl s3api::ObjectLayer for Storage {
         &self,
         bucket: String,
         credential: s3api::Credential,
-    ) -> Result<types::Bucket, s3err::ApiErrorType> {
+    ) -> Result<types::Bucket, s3err::ApiErrorCode> {
         todo!()
     }
 

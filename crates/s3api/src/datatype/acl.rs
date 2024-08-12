@@ -1,4 +1,4 @@
-const VALID_CANNED_ACL: [&str; 7] = [
+pub const VALID_CANNED_ACL: [&str; 7] = [
     "private",
     "public-read",
     "public-read-write",
