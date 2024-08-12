@@ -7,3 +7,4 @@ edition = "2021"
 anyhow = { workspace = true }
 aws-sdk-s3 = { workspace = true }
 s3api = { path = "../s3api" }
+s3err = { path = "../s3err" }

@@ -2,6 +2,8 @@ use actix_web::http;
 use phf::phf_map;
 use std::{error::Error, fmt};
 
+pub type ApiErrorType = Box<dyn ApiError + Send + Sync>;
+
 pub trait ApiError: Error {
     fn aws_error_code(&self) -> &str;
     fn description(&self) -> &str;

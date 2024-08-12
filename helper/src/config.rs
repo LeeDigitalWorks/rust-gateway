@@ -20,6 +20,7 @@ pub struct Config {
     pub bind_api_address: String,
     pub bind_tls_address: String,
     pub bind_admin_address: String,
+    pub bind_admin_grpc_address: String,
     pub ssl_key_path: String,
     pub ssl_cert_path: String,
 

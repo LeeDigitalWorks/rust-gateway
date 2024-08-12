@@ -7,7 +7,7 @@ impl s3api::ObjectLayer for Storage {
         bucket: String,
         acl: s3api::Acl,
         credential: s3api::Credential,
-    ) -> Result<(), anyhow::Error> {
+    ) -> Result<(), s3err::ApiErrorType> {
         todo!()
     }
 
@@ -119,10 +119,15 @@ impl s3api::ObjectLayer for Storage {
         todo!()
     }
 
-    fn list_buckets(
+    fn get_bucket_info(
         &self,
+        bucket: String,
         credential: s3api::Credential,
-    ) -> Result<Vec<String>, anyhow::Error> {
+    ) -> Result<types::Bucket, s3err::ApiErrorType> {
+        todo!()
+    }
+
+    fn list_buckets(&self, credential: s3api::Credential) -> Result<Vec<String>, anyhow::Error> {
         todo!()
     }
 

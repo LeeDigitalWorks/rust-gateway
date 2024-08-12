@@ -1,4 +1,13 @@
+use serde_derive::Serialize;
+
+#[derive(Serialize)]
+#[serde(rename = "LocationConstraint")]
 pub struct LocationResponse {
+    // #[serde(rename = "@xmlns")]
+    // #[serde(skip_serializing_if = "Option::is_none")]
+    // xmlns: Option<String>,
+    
+    #[serde(rename = "$value")]
     pub location: String,
 }
 

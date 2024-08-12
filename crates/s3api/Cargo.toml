@@ -11,6 +11,6 @@ chrono = "0.4.38"
 helper = { path = "../../helper" }
 quick-xml = { version = "0.36.1", features = ["serialize"] }
 serde = { workspace = true }
-serde-xml-rs = "0.6.0"
 serde_derive = { workspace = true }
+s3err = { path = "../s3err" }
 regex = "1.10.6"
