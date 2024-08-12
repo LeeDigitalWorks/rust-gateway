@@ -7,7 +7,7 @@ impl s3api::ObjectLayer for Storage {
         bucket: String,
         acl: s3api::Acl,
         credential: s3api::Credential,
-    ) -> Result<(), s3err::ApiErrorType> {
+    ) -> Result<(), s3err::ApiErrorCode> {
         todo!()
     }
 

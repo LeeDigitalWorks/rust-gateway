@@ -9,7 +9,7 @@ pub trait ObjectLayer {
         bucket: String,
         acl: datatype::Acl,
         credential: credential::Credential,
-    ) -> Result<(), s3err::ApiErrorType>;
+    ) -> Result<(), s3err::ApiErrorCode>;
     fn set_bucket_logging(
         &self,
         bucket: String,

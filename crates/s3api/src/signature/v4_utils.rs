@@ -1,4 +1,5 @@
 use hmac::{Hmac, Mac};
+use md5::Digest;
 
 pub const UNSIGNED_PAYLOAD: &str = "UNSIGNED-PAYLOAD";
 
@@ -10,3 +11,8 @@ pub fn sum_hmac(key: Vec<u8>, data: Vec<u8>) -> Vec<u8> {
     hmac.finalize().into_bytes().to_vec()
 }
 
+pub fn sum_md5(data: Vec<u8>) -> Vec<u8> {
+    let mut hasher = md5::Md5::new();
+    hasher.update(&data);
+    hasher.finalize().to_vec()
+}

@@ -1,9 +1,10 @@
 use std::sync::Arc;
 
-use actix_web::{web, Responder};
+use actix_web::{http::header, web, Responder};
 
 use crate::{
-    api_header, api_response, signature, Credential, LocationResponse, ObjectApiRouter, ObjectLayer,
+    api_header, api_response, get_acl_from_header, signature, Credential, LocationResponse,
+    ObjectApiRouter, ObjectLayer,
 };
 
 pub trait BucketHandlers {
@@ -119,6 +120,7 @@ pub trait BucketHandlers {
     async fn put_bucket_handler(
         req: actix_web::HttpRequest,
         data: web::Data<Arc<dyn ObjectLayer>>,
+        bytes: web::Bytes,
     ) -> actix_web::HttpResponse;
     async fn list_objects_handler(
         req: actix_web::HttpRequest,
@@ -360,9 +362,32 @@ impl BucketHandlers for ObjectApiRouter {
     }
 
     async fn put_bucket_handler(
-        _req: actix_web::HttpRequest,
+        req: actix_web::HttpRequest,
         data: web::Data<Arc<dyn ObjectLayer>>,
+        bytes: web::Bytes,
     ) -> actix_web::HttpResponse {
+        let bucket_name = req.match_info().get("bucket").unwrap().to_lowercase();
+
+        let credential = signature::is_req_authenticated(&req, bytes)
+            .map_err(|e| {
+                api_response::write_error_response(&req, e);
+            })
+            .unwrap();
+
+        if let None = req.headers().get("Content-Length") {
+            return api_response::write_error_response(&req, s3err::ApiErrorCode::ErrInvalidHeader);
+        }
+
+        let acl = get_acl_from_header(req.headers())
+            .map_err(|e| {
+                api_response::write_error_response(&req, e);
+            })
+            .unwrap();
+
+        if let Err(e) = data.make_bucket(bucket_name, acl, credential) {
+            return api_response::write_error_response(&req, e);
+        }
+
         api_response::write_success_response(Vec::new())
     }
 

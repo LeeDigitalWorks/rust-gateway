@@ -5,11 +5,13 @@ use actix_web::{
     web::{self, Query},
     HttpRequest,
 };
+use base64::prelude::*;
 
 use crate::Credential;
 
 use super::{
-    streaming_signature_v4::STREAMING_CONTENT_SHA_256, v2::SIGN_V2_ALGORITHM, v4::SIGN_V4_ALGORITHM,
+    streaming_signature_v4::STREAMING_CONTENT_SHA_256, v2::SIGN_V2_ALGORITHM,
+    v4::SIGN_V4_ALGORITHM, v4_utils::sum_md5,
 };
 
 pub enum AuthType {
@@ -97,7 +99,12 @@ pub fn is_req_authenticated(
 
     if let Some(header) = req.headers().get("Content-Md5") {
         // check if Content-Md5 matches md5 sum of body
-        
+        if !header
+            .as_bytes()
+            .eq(BASE64_STANDARD.encode(sum_md5(body)).as_bytes())
+        {
+            return Err(s3err::ApiErrorCode::ErrBadDigest);
+        }
     }
 
     match get_request_auth_type(req) {
