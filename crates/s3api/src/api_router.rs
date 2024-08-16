@@ -3,6 +3,7 @@ use regex::Regex;
 
 use crate::{object_interface::ObjectLayer, BucketHandlers, ObjectHandlers};
 
+#[derive(Clone)]
 pub struct ObjectApiRouter {
     pub object_layer: Box<dyn ObjectLayer>,
 }
@@ -417,32 +418,32 @@ impl ObjectApiRouter {
     pub fn new(object_layer: Box<dyn ObjectLayer>) -> Self {
         Self { object_layer }
     }
+}
 
-    pub fn register_routes(&self, config: &mut actix_web::web::ServiceConfig) {
-        // add list buckets at the root
-        config.service(
-            actix_web::web::scope("/")
-                .guard(actix_web::guard::Get())
-                .route(
-                    "/",
-                    actix_web::web::get().to(ObjectApiRouter::list_buckets_handler),
-                ),
-        );
+pub fn register_routes(config: &mut actix_web::web::ServiceConfig) {
+    // add list buckets at the root
+    config.service(
+        actix_web::web::scope("/")
+            .guard(actix_web::guard::Get())
+            .route(
+                "/",
+                actix_web::web::get().to(ObjectApiRouter::list_buckets_handler),
+            ),
+    );
 
-        helper::CONFIG.s3domain.iter().for_each(|domain| {
-            // add a router for each domain - vhost and path style
-            // path style -- domain.name/bucket_name/object_name
-            let mut path_config =
-                actix_web::web::scope("/{bucket}").guard(actix_web::guard::Host(domain));
-            // vhost style -- bucket_name.domain.name/object_name
-            let mut vhost_config = actix_web::web::scope("/")
-                .guard(actix_web::guard::Host(format!("{{bucket}}.{}", domain)));
+    helper::CONFIG.s3domain.iter().for_each(|domain| {
+        // add a router for each domain - vhost and path style
+        // path style -- domain.name/bucket_name/object_name
+        let mut path_config =
+            actix_web::web::scope("/{bucket}").guard(actix_web::guard::Host(domain));
+        // vhost style -- bucket_name.domain.name/object_name
+        let mut vhost_config = actix_web::web::scope("/")
+            .guard(actix_web::guard::Host(format!("{{bucket}}.{}", domain)));
 
-            path_config = configure_scope(path_config);
-            vhost_config = configure_scope(vhost_config);
+        path_config = configure_scope(path_config);
+        vhost_config = configure_scope(vhost_config);
 
-            config.service(path_config);
-            config.service(vhost_config);
-        });
-    }
+        config.service(path_config);
+        config.service(vhost_config);
+    });
 }

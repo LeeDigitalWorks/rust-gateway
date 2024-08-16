@@ -9,6 +9,7 @@ path = "src/main.rs"
 
 [dependencies]
 actix-web = { workspace = true }
+helper = { path = "../helper" }
 s3api = { path = "../crates/s3api" }
 storage = { path = "../crates/storage" }
 tokio = { version = "1.39.2", features = ["full"] }

@@ -1,4 +1,0 @@
-s3domain = ["localhost:8000"]
-region = "us-west-1"
-
-# S3Map Config

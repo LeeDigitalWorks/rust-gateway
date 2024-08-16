@@ -9,7 +9,7 @@ use super::{v4_parser::parse_credential, v4_utils::sum_hmac};
 pub const SIGN_V4_ALGORITHM: &str = "AWS4-HMAC-SHA256";
 
 // get signed headers generates an alphabetically sorted list of headers semi-colon separated
-pub fn get_signed_headers(headers: &HeaderMap) -> String {
+fn get_signed_headers(headers: &HeaderMap) -> String {
     let mut signed_headers = headers
         .keys()
         .map(|k| k.as_str().to_lowercase())
@@ -19,7 +19,7 @@ pub fn get_signed_headers(headers: &HeaderMap) -> String {
 }
 
 // get canonical headers generates a canonical list of headers
-pub fn get_canonical_headers(headers: &HeaderMap) -> String {
+fn get_canonical_headers(headers: &HeaderMap) -> String {
     let mut canonical_headers = headers
         .iter()
         .map(|(k, v)| {
@@ -35,7 +35,7 @@ pub fn get_canonical_headers(headers: &HeaderMap) -> String {
 }
 
 // get canonical request generates a canonical request
-pub fn get_canonical_request(
+fn get_canonical_request(
     method: &str,
     uri: &str,
     query: &str,
@@ -54,7 +54,7 @@ pub fn get_canonical_request(
 }
 
 // get scope generates a string of a specific date, region, service
-pub fn get_scope(date: chrono::NaiveDateTime, region: &str, service: &str) -> String {
+fn get_scope(date: chrono::NaiveDateTime, region: &str, service: &str) -> String {
     format!(
         "{}/{}/{}/aws4_request",
         date.format(datatype::YYYY_MM_DD),
@@ -64,7 +64,7 @@ pub fn get_scope(date: chrono::NaiveDateTime, region: &str, service: &str) -> St
 }
 
 // get string to sign generates a string to sign
-pub fn get_string_to_sign(
+fn get_string_to_sign(
     date: chrono::NaiveDateTime,
     region: &str,
     service: &str,
@@ -80,7 +80,7 @@ pub fn get_string_to_sign(
 }
 
 // get signing key generates a signing key
-pub fn get_signing_key(secret_key: &str, date: chrono::NaiveDateTime, region: &str) -> Vec<u8> {
+fn get_signing_key(secret_key: &str, date: chrono::NaiveDateTime, region: &str) -> Vec<u8> {
     let date_key = sum_hmac(
         format!("AWS4{}", secret_key).as_bytes().to_vec(),
         date.format(datatype::YYYY_MM_DD)
@@ -94,7 +94,7 @@ pub fn get_signing_key(secret_key: &str, date: chrono::NaiveDateTime, region: &s
 }
 
 // get signature generates a signature
-pub fn get_signature(signing_key: Vec<u8>, string_to_sign: &str) -> String {
+fn get_signature(signing_key: Vec<u8>, string_to_sign: &str) -> String {
     const_hex::encode(sum_hmac(signing_key, string_to_sign.as_bytes().to_vec()))
 }
 

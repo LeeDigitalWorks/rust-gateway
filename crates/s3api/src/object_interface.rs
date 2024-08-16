@@ -2,7 +2,28 @@ use aws_sdk_s3::types;
 
 use crate::{credential, datatype};
 
-pub trait ObjectLayer {
+// The ObjectLayerClone trait allows cloning of trait objects
+pub trait ObjectLayerClone {
+    fn clone_box(&self) -> Box<dyn ObjectLayer>;
+}
+
+impl<T> ObjectLayerClone for T
+where
+    T: 'static + ObjectLayer + Clone,
+{
+    fn clone_box(&self) -> Box<dyn ObjectLayer> {
+        Box::new(self.clone())
+    }
+}
+
+// Implement Clone for Box<dyn ObjectLayer> by using the clone_box method
+impl Clone for Box<dyn ObjectLayer> {
+    fn clone(&self) -> Box<dyn ObjectLayer> {
+        self.clone_box()
+    }
+}
+
+pub trait ObjectLayer: ObjectLayerClone + Send + Sync {
     // Bucket Operations
     fn make_bucket(
         &self,
