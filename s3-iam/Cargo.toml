@@ -4,9 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+chrono = { workspace = true }
 prost = { workspace = true}
+rand = "0.8.5"
 sqlx = { version = "0.8.2", features = ["runtime-tokio", "tls-rustls-ring"] }
 tokio = { workspace = true }
+tokio-stream = "0.1.16"
 tonic = { workspace = true }
 tracing = "0.1.40"
 tracing-subscriber = "0.3.18"

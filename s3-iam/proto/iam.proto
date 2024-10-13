@@ -48,8 +48,6 @@ message CreateUserResponse {
 
 message GetUserRequest {
     uint64 id = 1;
-    string name = 2;
-    string email = 3;
 }
 
 message GetUserResponse {
@@ -58,7 +56,6 @@ message GetUserResponse {
 
 message DeleteUserRequest {
     uint64 id = 1;
-
 }
 
 message DeleteUserResponse {}
