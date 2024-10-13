@@ -1,8 +1,8 @@
 [workspace]
 members = [
-    "cmd",
-    "crates/*",
-    "helper",
+    "s3-core",
+    "s3-backend",
+    "s3-server",
 ]
 resolver = "2"
 
@@ -11,9 +11,13 @@ opt-level = 3
 lto = true
 
 [workspace.dependencies]
-actix-web = "4.9.0"
-anyhow = "1.0.86"
-aws-sdk-s3 = "1.43.0"
+async-trait = "0.1.83"
+aws-sdk-s3 = "1.56.0"
+axum = { version = "0.7.7", features = ["multipart"] }
 chrono = "0.4.38"
-serde = { version = "1.0.205" }
-serde_derive = "1.0.205"
+serde = { version = "1.0.210" }
+serde_derive = "1.0.210"
+tokio = { version = "1.40.0", features = ["full"] }
+hyper = { version = "1.4.1", features = ["full"] }
+thiserror = "1.0.64"
+quick-xml = { version = "0.36.2", features = ["serialize"] }

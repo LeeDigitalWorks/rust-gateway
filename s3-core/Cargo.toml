@@ -1,0 +1,13 @@
+[package]
+name = "s3-core"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = { workspace = true }
+chrono = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true }
+serde_derive = { workspace = true }
+bytes = "1.7.2"
+quick-xml = { workspace = true }
