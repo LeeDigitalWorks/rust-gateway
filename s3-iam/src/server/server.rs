@@ -114,7 +114,7 @@ impl iampb::iam::iam_server::Iam for S3IAMServer {
                 seconds: chrono::Utc::now().timestamp(),
                 nanos: 0,
             }),
-            grants: vec![request.grant.expect("Grant is required")],
+            grants: vec![],
         };
         let mut keys = self.keys.write().await;
         keys.insert(access_key.clone(), key.clone());

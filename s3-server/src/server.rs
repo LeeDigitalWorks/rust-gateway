@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::io::Error;
 use std::sync::Arc;
 
@@ -6,14 +7,24 @@ use axum::response::Response;
 use axum::{extract::State, routing::get, Router};
 use s3_backend::memory;
 use tokio::signal::unix::{signal, SignalKind};
+use tokio::sync::RwLock;
 
 struct AppState {
     backend: Arc<dyn s3_backend::Backend>,
+    iam_client: Arc<s3_iam::iam::iam_client::IamClient<tonic::transport::Channel>>,
+    keys: Arc<RwLock<HashMap<String, s3_iam::iampb::iam::Key>>>,
 }
 
-pub async fn start_server(addr: &str) -> Result<(), Error> {
+pub async fn start_server(
+    addr: &str,
+    client: s3_iam::iam::iam_client::IamClient<tonic::transport::Channel>,
+) -> Result<(), Error> {
     let backend = Arc::new(memory::InMemoryBackend::new());
-    let state = Arc::new(AppState { backend });
+    let state = Arc::new(AppState {
+        backend,
+        iam_client: Arc::new(client),
+        keys: Arc::new(RwLock::new(HashMap::new())),
+    });
     let app = Router::new()
         .route("/", get(list_buckets))
         .with_state(state)
