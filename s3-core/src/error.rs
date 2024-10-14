@@ -1,50 +1,58 @@
 use axum::response::IntoResponse;
-use thiserror::Error;
+use bytes::Bytes;
 
-#[derive(Error, Debug, Serialize)]
+#[derive(Debug, Serialize)]
 pub enum S3Error {
-    #[error("Access denied: {0}")]
-    AccessDenied(String),
-    #[error("Bucket already exists: {0}")]
+    AccessDenied,
     BucketAlreadyExists(String),
-    #[error("Bucket not empty: {0}")]
-    BucketNotEmpty(String),
-    #[error("Invalid bucket name: {0}. Bucket names must be between 3 and 63 characters long and may contain only lowercase letters, numbers, hyphens, and periods.")]
-    InvalidBucketName(String),
-    #[error("InvalidAccessKeyId: {0}")]
-    InvalidAccessKeyId(String),
-    #[error("NoSuchBucket: {0}")]
+    BucketNotEmpty,
+    InvalidArgument,
+    InvalidBucketName,
+    InvalidAccessKeyId,
+    MissingDateHeader,
     NoSuchBucket(String),
-    #[error("NoSuchKey: {0}")]
-    NoSuchKey(String),
-    #[error("Invalid request: {0}")]
-    InvalidRequest(String),
-    #[error("Internal server error: {0}")]
-    InternalError(String),
+    NoSuchKey,
+    InvalidRequest,
+    InternalError,
+    RequestTimeTooSkewed,
 }
 
-// Helper function to convert errors to HTTP status codes
-pub fn error_to_http_status(error: &S3Error) -> u16 {
+#[derive(Serialize, Debug)]
+struct Error {
+    #[serde(skip)]
+    status: u16,
+    code: String,
+    message: String,
+    resource: String,
+    request_id: String,
+}
+
+fn s3error_to_error(error: &S3Error) -> Error {
     match error {
-        S3Error::AccessDenied(_) => 403,
-        S3Error::BucketAlreadyExists(_) => 409,
-        S3Error::BucketNotEmpty(_) => 409,
-        S3Error::InternalError(_) => 500,
-        S3Error::InvalidAccessKeyId(_) => 403,
-        S3Error::InvalidRequest(_) => 400,
-        S3Error::NoSuchBucket(_) => 404,
-        S3Error::NoSuchKey(_) => 404,
-        _ => 500,
+        S3Error::AccessDenied => Error {
+            status: 403,
+            code: "AccessDenied".to_string(),
+            message: "Access denied".to_string(),
+            resource: "".to_string(),
+            request_id: "".to_string(),
+        },
+        _ => Error {
+            status: 500,
+            code: "InternalError".to_string(),
+            message: "Internal server error".to_string(),
+            resource: "".to_string(),
+            request_id: "".to_string(),
+        },
     }
 }
 
 impl IntoResponse for S3Error {
     fn into_response(self) -> axum::response::Response<axum::body::Body> {
-        let status = error_to_http_status(&self);
-        let body = format!("{}", self);
+        let error = s3error_to_error(&self);
+        let bytes: Bytes = quick_xml::se::to_string(&error).unwrap().into();
         axum::http::Response::builder()
-            .status(status)
-            .body(axum::body::Body::from(body))
+            .status(error.status)
+            .body(axum::body::Body::from(bytes))
             .unwrap()
     }
 }

@@ -42,7 +42,7 @@ pub async fn is_req_authenticated(mut req: Request, next: Next) -> Result<Respon
         },
         _ => {
             return Ok(axum::response::IntoResponse::into_response(
-                S3Error::InternalError("Unknown auth type".to_string()),
+                S3Error::InternalError,
             ))
         }
     }

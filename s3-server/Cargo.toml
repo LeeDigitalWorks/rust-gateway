@@ -15,3 +15,6 @@ s3-iam = { path = "../s3-iam" }
 hmac = "0.12.1"
 sha2 = "0.10.8"
 chrono = { workspace = true }
+md-5 = "0.10.6"
+base64 = "0.22.1"
+const-hex = "1.13.1"
