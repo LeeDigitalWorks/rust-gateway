@@ -1,6 +1,9 @@
 use std::collections::HashMap;
 
-use rand::{distributions::Alphanumeric, thread_rng, Rng};
+use rand::{
+    distributions::{Alphanumeric, Uniform},
+    thread_rng, Rng,
+};
 use tokio::sync::RwLock;
 use tonic::transport::Server;
 
@@ -28,19 +31,25 @@ pub async fn start_server(addr: &str) -> Result<(), Box<dyn std::error::Error>> 
 
 /// Generates a 20-character AWS Access Key
 fn generate_access_key() -> String {
-    thread_rng()
+    let key: String = thread_rng()
         .sample_iter(&Alphanumeric)
-        .take(20)
+        .take(18)
         .map(char::from)
-        .collect()
+        .collect();
+
+    format!("RG{}", key.to_uppercase())
 }
 
 /// Generates a 40-character AWS Secret Key
 fn generate_secret_key() -> String {
+    let charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ\
+  abcdefghijklmnopqrstuvwxyz\
+  0123456789+/";
+
     thread_rng()
-        .sample_iter(&Alphanumeric)
+        .sample_iter(Uniform::new_inclusive(0, charset.len() - 1))
         .take(40)
-        .map(char::from)
+        .map(|i| charset.chars().nth(i).unwrap())
         .collect()
 }
 
