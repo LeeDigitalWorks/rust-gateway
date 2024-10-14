@@ -3,8 +3,12 @@ use super::types::ObjectMetadata;
 #[derive(Debug, Clone, PartialEq)]
 pub enum S3Request {
     ListBuckets,
-    CreateBucket { name: String },
-    DeleteBucket { name: String },
+    CreateBucket {
+        name: String,
+    },
+    DeleteBucket {
+        name: String,
+    },
     ListObjects {
         bucket: String,
         prefix: Option<String>,
@@ -55,4 +59,16 @@ impl S3Request {
             _ => None,
         }
     }
+}
+
+pub struct CredentialHeader {
+    pub access_key: String,
+    pub credential_scope: Scope,
+}
+
+pub struct Scope {
+    pub date: chrono::NaiveDateTime,
+    pub region: String,
+    pub service: String,
+    pub request: String,
 }

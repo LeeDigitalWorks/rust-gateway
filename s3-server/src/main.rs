@@ -1,4 +1,5 @@
 mod server;
+mod authz;
 
 #[tokio::main]
 async fn main() {

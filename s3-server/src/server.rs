@@ -3,11 +3,14 @@ use std::io::Error;
 use std::sync::Arc;
 
 use axum::http::HeaderMap;
+use axum::middleware;
 use axum::response::Response;
 use axum::{extract::State, routing::get, Router};
 use s3_backend::memory;
 use s3_iam::iam::StreamKeysRequest;
 use tokio::signal::unix::{signal, SignalKind};
+
+use crate::authz::is_req_authenticated;
 
 struct AppState {
     backend: Arc<dyn s3_backend::Backend>,
@@ -24,7 +27,8 @@ pub async fn start_server(
 
     let app = Router::new()
         .route("/", get(list_buckets))
-        .with_state(state)
+        .with_state(Arc::clone(&state))
+        .layer(middleware::from_fn(is_req_authenticated))
         .fallback(invalid_request);
 
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
