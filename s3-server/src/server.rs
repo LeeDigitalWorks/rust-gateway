@@ -11,10 +11,11 @@ use s3_iam::iam::StreamKeysRequest;
 use tokio::signal::unix::{signal, SignalKind};
 
 use crate::authz::is_req_authenticated;
+use crate::limiter::is_req_limited;
 
-struct AppState {
-    backend: Arc<dyn s3_backend::Backend>,
-    keys: Arc<HashMap<String, s3_iam::iampb::iam::Key>>,
+pub struct AppState {
+    pub backend: Arc<dyn s3_backend::Backend>,
+    pub keys: Arc<HashMap<String, s3_iam::iampb::iam::Key>>,
 }
 
 pub async fn start_server(
@@ -28,7 +29,11 @@ pub async fn start_server(
     let app = Router::new()
         .route("/", get(list_buckets))
         .with_state(Arc::clone(&state))
-        .layer(middleware::from_fn(is_req_authenticated))
+        .layer(middleware::from_fn_with_state(
+            Arc::clone(&state),
+            is_req_authenticated,
+        ))
+        .layer(middleware::from_fn(is_req_limited))
         .fallback(invalid_request);
 
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();

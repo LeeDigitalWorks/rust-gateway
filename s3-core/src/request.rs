@@ -1,7 +1,9 @@
 use super::types::ObjectMetadata;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq)]
 pub enum S3Request {
+    #[default]
+    Unknown,
     ListBuckets,
     CreateBucket {
         name: String,
@@ -59,16 +61,4 @@ impl S3Request {
             _ => None,
         }
     }
-}
-
-pub struct CredentialHeader {
-    pub access_key: String,
-    pub credential_scope: Scope,
-}
-
-pub struct Scope {
-    pub date: chrono::NaiveDateTime,
-    pub region: String,
-    pub service: String,
-    pub request: String,
 }
