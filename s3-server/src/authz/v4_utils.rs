@@ -1,18 +1,24 @@
 use hmac::{Hmac, Mac};
-use md5::Digest;
+use md5::{
+    digest::{generic_array::GenericArray, typenum},
+    Digest,
+};
 
 pub type HmacSha256 = Hmac<sha2::Sha256>;
 
-pub fn sum_sha256(data: Vec<u8>) -> Vec<u8> {
+pub fn sum_sha256(data: impl AsRef<[u8]>) -> Vec<u8> {
     let mut hasher = sha2::Sha256::new();
     hasher.update(&data);
     hasher.finalize().to_vec()
 }
 
-pub fn sum_hmac(key: Vec<u8>, data: Vec<u8>) -> Vec<u8> {
-    let mut hmac = HmacSha256::new_from_slice(&key).expect("Invalid Key length");
-    hmac.update(&data);
-    hmac.finalize().into_bytes().to_vec()
+pub fn hmac_sha256(
+    key: impl AsRef<[u8]>,
+    data: impl AsRef<[u8]>,
+) -> GenericArray<u8, typenum::U32> {
+    let mut hmac = HmacSha256::new_from_slice(key.as_ref()).expect("Invalid Key length");
+    hmac.update(data.as_ref());
+    hmac.finalize().into_bytes()
 }
 
 pub fn sum_md5(data: Vec<u8>) -> Vec<u8> {

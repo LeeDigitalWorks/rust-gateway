@@ -90,3 +90,7 @@ async fn create_bucket() -> &'static str {
 async fn delete_bucket() -> &'static str {
     "Bucket deleted"
 }
+
+async fn get_object() -> &'static str {
+    "Object retrieved"
+}
