@@ -1,4 +1,5 @@
 mod authz;
+mod handler;
 mod limiter;
 mod request;
 mod server;

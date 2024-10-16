@@ -36,7 +36,7 @@ fn s3error_to_error(error: &S3Error) -> Error {
         S3Error::AccessDenied => Error {
             status: 403,
             code: "AccessDenied".to_string(),
-            message: "Access denied".to_string(),
+            message: "Access Denied".to_string(),
             resource: "".to_string(),
             request_id: "".to_string(),
         },

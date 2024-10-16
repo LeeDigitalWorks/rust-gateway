@@ -3,6 +3,7 @@ use s3_core::error::S3Error;
 use s3_core::response::ListBucketsResponse;
 
 pub mod memory;
+pub mod proxy;
 
 #[async_trait]
 pub trait Backend: Send + Sync {

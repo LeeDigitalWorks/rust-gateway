@@ -1,17 +1,24 @@
 use std::collections::HashMap;
+use std::env;
 use std::io::Error;
 use std::sync::Arc;
 
+use axum::extract::{Host, Path, Query};
 use axum::http::HeaderMap;
 use axum::middleware;
-use axum::response::Response;
+use axum::response::{IntoResponse, Response};
+use axum::routing::any;
 use axum::{extract::State, routing::get, Router};
 use s3_backend::memory;
+use s3_core::S3Error;
 use s3_iam::iam::StreamKeysRequest;
 use tokio::signal::unix::{signal, SignalKind};
 
 use crate::authz::is_req_authenticated;
+use crate::handler::list_buckets;
 use crate::limiter::is_req_limited;
+
+const DEFAULT_S3_HOST: &str = "127.0.0.1:3000";
 
 pub struct AppState {
     pub backend: Arc<dyn s3_backend::Backend>,
@@ -28,13 +35,13 @@ pub async fn start_server(
 
     let app = Router::new()
         .route("/", get(list_buckets))
+        .route("/*rest", any(handle_request))
         .with_state(Arc::clone(&state))
         .layer(middleware::from_fn_with_state(
             Arc::clone(&state),
             is_req_authenticated,
         ))
-        .layer(middleware::from_fn(is_req_limited))
-        .fallback(invalid_request);
+        .layer(middleware::from_fn(is_req_limited));
 
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     tracing::debug!("listening on {}", listener.local_addr().unwrap());
@@ -70,27 +77,42 @@ async fn shutdown_signal() {
     }
 }
 
-async fn invalid_request() -> &'static str {
-    "Invalid request"
-}
+async fn handle_request(
+    Host(host): Host,
+    Path(rest): Path<String>,
+    Query(query): Query<HashMap<String, String>>,
+    State(state): State<Arc<AppState>>,
+    headers: HeaderMap,
+) -> Response {
+    let root_host = env::var("S3_HOST").unwrap_or_else(|_| DEFAULT_S3_HOST.to_string());
 
-async fn list_buckets(State(state): State<Arc<AppState>>, headers: HeaderMap) -> Response {
-    tracing::debug!(headers = ?headers, "Listing buckets");
-    let response = state.backend.list_buckets().await;
-    match response {
-        Ok(response) => axum::response::IntoResponse::into_response(response.into_response()),
-        Err(error) => axum::response::IntoResponse::into_response(error),
+    tracing::debug!(host = ?host, rest = ?rest, query = ?query, "Handling request");
+
+    // Handle path style requests
+    if root_host == host {
+        let bucket = rest.split('/').next().unwrap().to_string();
+        let rest = rest.split('/').skip(1).collect::<Vec<_>>().join("/");
+        let response = handle_bucket_request(bucket, rest, query).await;
+        match response {
+            Ok(_) => return axum::response::IntoResponse::into_response("".to_string()),
+            Err(error) => return axum::response::IntoResponse::into_response(error),
+        }
+    }
+    // Handle virtual host style requests
+    else {
+        let bucket = host.split('.').next().unwrap().to_string();
+        let response = handle_bucket_request(bucket, rest, query).await;
+        match response {
+            Ok(_) => return axum::response::IntoResponse::into_response("".to_string()),
+            Err(error) => return axum::response::IntoResponse::into_response(error),
+        }
     }
 }
 
-async fn create_bucket() -> &'static str {
-    "Bucket created"
-}
-
-async fn delete_bucket() -> &'static str {
-    "Bucket deleted"
-}
-
-async fn get_object() -> &'static str {
-    "Object retrieved"
+async fn handle_bucket_request(
+    bucket: String,
+    rest: String,
+    params: HashMap<String, String>,
+) -> Result<(), S3Error> {
+    Ok(())
 }
