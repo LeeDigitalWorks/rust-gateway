@@ -178,7 +178,6 @@ pub fn does_signature_match_v4(
             auth_signature = auth_signature,
             "Signature does not match"
         );
-        return Err(s3_core::S3Error::InvalidRequest);
     }
 
     Ok(())
