@@ -12,7 +12,6 @@ pub struct S3Info {
     pub region: String,
     pub access_key: String,
     pub secret_key: String,
-    pub operation: s3_core::S3Request,
 }
 
 impl S3Info {
