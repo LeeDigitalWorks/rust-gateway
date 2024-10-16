@@ -1,7 +1,9 @@
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, usize};
 
 use axum::{extract::Request, http::HeaderMap};
 use sha2::Digest;
+
+use crate::authz::v4_utils::sum_sha256;
 
 use super::{v4_parser::parse_sign_v4, v4_utils::sum_hmac};
 
@@ -22,7 +24,7 @@ fn get_string_to_sign(
         SIGN_V4_ALGORITHM,
         date.format("%Y%m%dT%H%M%SZ"),
         get_scope(date, region),
-        const_hex::encode(sha2::Sha256::digest(canonical_request.as_bytes()))
+        const_hex::encode(sum_sha256(canonical_request.as_bytes().to_vec()))
     )
 }
 
@@ -63,6 +65,13 @@ fn get_signed_headers(req: &Request) -> Vec<(&str, String)> {
         .collect()
 }
 
+fn get_payload_hash(req: &Request) -> String {
+    if let Some(hash) = req.headers().get("X-Amz-Content-Sha256") {
+        return hash.to_str().unwrap().to_string();
+    }
+    UNSIGNED_HASH.to_string()
+}
+
 fn get_canonical_request(req: &Request) -> String {
     let method = req.method().as_str();
 
@@ -79,17 +88,15 @@ fn get_canonical_request(req: &Request) -> String {
         .map(|(k, v)| format!("{}:{}", k, v.to_str().unwrap()))
         .collect::<Vec<String>>()
         .join("\n");
-    let signed_headers = get_signed_headers(req)
+
+    let mut signed_headers = get_signed_headers(req)
         .iter()
         .map(|(k, _)| *k)
-        .collect::<Vec<&str>>()
-        .join(";");
-    let payload_hash = req
-        .headers()
-        .get("X-Amz-Content-Sha256")
-        .unwrap()
-        .to_str()
-        .unwrap();
+        .collect::<Vec<&str>>();
+    signed_headers.sort_unstable();
+    let signed_headers = signed_headers.join(";");
+
+    let payload_hash = get_payload_hash(req);
 
     format!(
         "{}\n{}\n{}\n{}\n{}\n{}",
@@ -137,7 +144,10 @@ pub fn does_signature_match_v4(
 
     // compare signature
     let auth_signature = auth_string.split("Signature=").collect::<Vec<&str>>()[1].trim();
-    if signature != auth_signature {
+    if subtle::ConstantTimeEq::ct_eq(signature.as_bytes(), auth_signature.as_bytes())
+        .unwrap_u8()
+        .eq(&0)
+    {
         return Err(s3_core::S3Error::InvalidRequest);
     }
 
@@ -148,6 +158,9 @@ pub fn does_signature_match_v4(
 mod tests {
     use super::*;
 
+    static ACCESS_KEY: &str = "AKIAIOSFODNN7EXAMPLE";
+    static SECRET_KEY: &str = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY";
+
     #[test]
     fn test_get_canonical_request() {
         let req = Request::builder()
@@ -155,7 +168,7 @@ mod tests {
             .header("Host", "examplebucket.s3.amazonaws.com")
             .header("Range", "bytes=0-9")
             .header("x-amz-content-sha256", UNSIGNED_HASH)
-            .header("x-amx-date", "20130524T000000Z")
+            .header("x-amz-date", "20130524T000000Z")
             .uri("/test.txt")
             .body(axum::body::Body::empty())
             .unwrap();
@@ -163,7 +176,46 @@ mod tests {
         let canonical_request = get_canonical_request(&req);
         assert_eq!(
             canonical_request,
-            "GET\n/test.txt\n\nhost:examplebucket.s3.amazonaws.com\nrange:bytes=0-9\nx-amz-content-sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\nx-amx-date:20130524T000000Z\n\nhost;range;x-amz-content-sha256;x-amx-date\ne3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            "GET\n/test.txt\n\nhost:examplebucket.s3.amazonaws.com\nrange:bytes=0-9\nx-amz-content-sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\nx-amz-date:20130524T000000Z\nhost;range;x-amz-content-sha256;x-amz-date\ne3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
         );
+    }
+
+    #[test]
+    fn test_get_payload_hash() {
+        let req = Request::builder()
+            .method("GET")
+            .header("Host", "examplebucket.s3.amazonaws.com")
+            .header("Range", "bytes=0-9")
+            .header("x-amz-content-sha256", UNSIGNED_HASH)
+            .header("x-amz-date", "20130524T000000Z")
+            .uri("/test.txt")
+            .body(axum::body::Body::empty())
+            .unwrap();
+
+        let payload_hash = get_payload_hash(&req);
+        assert_eq!(payload_hash, UNSIGNED_HASH);
+    }
+
+    #[test]
+    fn test_get_string_to_sign() {
+        let req = Request::builder()
+            .method("GET")
+            .header("Host", "examplebucket.s3.amazonaws.com")
+            .header("Range", "bytes=0-9")
+            .header("x-amz-content-sha256", UNSIGNED_HASH)
+            .header("x-amz-date", "20130524T000000Z")
+            .uri("/test.txt")
+            .body(axum::body::Body::empty())
+            .unwrap();
+
+        let canonical_request = get_canonical_request(&req);
+        let string_to_sign = get_string_to_sign(
+            chrono::NaiveDateTime::parse_from_str("20130524T000000Z", "%Y%m%dT%H%M%SZ").unwrap(),
+            "us-east-1",
+            &canonical_request,
+        );
+        assert_eq!(
+            string_to_sign,
+            "AWS4-HMAC-SHA256\n20130524T000000Z\n20130524/us-east-1/s3/aws4_request\n7344ae5b7ee6c3e7e6b0fe0640412a37625d1fbfff95c48bbb2dc43964946972");
     }
 }
