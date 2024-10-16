@@ -9,6 +9,7 @@ use super::access_key::parse_access_key;
 pub struct S3Info {
     pub bucket: String,
     pub key: String,
+    pub region: String,
     pub access_key: String,
     pub secret_key: String,
     pub operation: s3_core::S3Request,
