@@ -116,6 +116,16 @@ pub struct StreamKeysResponse {
     #[prost(message, optional, tag = "1")]
     pub key: ::core::option::Option<Key>,
 }
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetKeyRequest {
+    #[prost(string, tag = "1")]
+    pub access_key: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetKeyResponse {
+    #[prost(message, optional, tag = "1")]
+    pub key: ::core::option::Option<Key>,
+}
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
 pub enum Permission {
@@ -362,6 +372,45 @@ pub mod iam_client {
             req.extensions_mut().insert(GrpcMethod::new("iam.IAM", "StreamKeys"));
             self.inner.server_streaming(req, path, codec).await
         }
+        pub async fn list_keys(
+            &mut self,
+            request: impl tonic::IntoRequest<super::ListKeysRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::ListKeysResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static("/iam.IAM/ListKeys");
+            let mut req = request.into_request();
+            req.extensions_mut().insert(GrpcMethod::new("iam.IAM", "ListKeys"));
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn get_key(
+            &mut self,
+            request: impl tonic::IntoRequest<super::GetKeyRequest>,
+        ) -> std::result::Result<tonic::Response<super::GetKeyResponse>, tonic::Status> {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static("/iam.IAM/GetKey");
+            let mut req = request.into_request();
+            req.extensions_mut().insert(GrpcMethod::new("iam.IAM", "GetKey"));
+            self.inner.unary(req, path, codec).await
+        }
     }
 }
 /// Generated server implementations.
@@ -419,6 +468,17 @@ pub mod iam_server {
             &self,
             request: tonic::Request<super::StreamKeysRequest>,
         ) -> std::result::Result<tonic::Response<Self::StreamKeysStream>, tonic::Status>;
+        async fn list_keys(
+            &self,
+            request: tonic::Request<super::ListKeysRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::ListKeysResponse>,
+            tonic::Status,
+        >;
+        async fn get_key(
+            &self,
+            request: tonic::Request<super::GetKeyRequest>,
+        ) -> std::result::Result<tonic::Response<super::GetKeyResponse>, tonic::Status>;
     }
     #[derive(Debug)]
     pub struct IamServer<T> {
@@ -753,6 +813,92 @@ pub mod iam_server {
                                 max_encoding_message_size,
                             );
                         let res = grpc.server_streaming(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/iam.IAM/ListKeys" => {
+                    #[allow(non_camel_case_types)]
+                    struct ListKeysSvc<T: Iam>(pub Arc<T>);
+                    impl<T: Iam> tonic::server::UnaryService<super::ListKeysRequest>
+                    for ListKeysSvc<T> {
+                        type Response = super::ListKeysResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::ListKeysRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as Iam>::list_keys(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = ListKeysSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/iam.IAM/GetKey" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetKeySvc<T: Iam>(pub Arc<T>);
+                    impl<T: Iam> tonic::server::UnaryService<super::GetKeyRequest>
+                    for GetKeySvc<T> {
+                        type Response = super::GetKeyResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::GetKeyRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as Iam>::get_key(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = GetKeySvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
                         Ok(res)
                     };
                     Box::pin(fut)

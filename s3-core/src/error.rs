@@ -11,7 +11,7 @@ pub enum S3Error {
     InvalidAccessKeyId,
     MissingDateHeader,
     NoSuchBucket(String),
-    NoSuchKey,
+    NoSuchKey(String),
     InvalidRequest,
     InternalError,
     RequestTimeTooSkewed,

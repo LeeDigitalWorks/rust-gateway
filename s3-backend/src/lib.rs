@@ -10,6 +10,7 @@ pub trait Backend: Send + Sync {
     async fn list_buckets(&self) -> Result<ListBucketsResponse, S3Error>;
     async fn create_bucket(&self, name: &str) -> Result<(), S3Error>;
     async fn delete_bucket(&self, name: &str) -> Result<(), S3Error>;
+    async fn get_object(&self, bucket: &str, key: &str) -> Result<Vec<u8>, S3Error>;
 }
 
 pub use memory::InMemoryBackend;

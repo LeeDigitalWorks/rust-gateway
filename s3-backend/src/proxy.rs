@@ -9,6 +9,10 @@ pub struct ProxyBackend {}
 
 #[async_trait]
 impl crate::Backend for ProxyBackend {
+    async fn get_object(&self, _bucket_name: &str, _key: &str) -> Result<Vec<u8>, S3Error> {
+        Ok(vec![])
+    }
+
     async fn list_buckets(&self) -> Result<ListBucketsResponse, S3Error> {
         Ok(ListBucketsResponse {
             buckets: BucketContainer { buckets: vec![] },

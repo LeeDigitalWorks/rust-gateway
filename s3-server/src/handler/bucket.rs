@@ -1,11 +1,14 @@
 use std::sync::Arc;
 
-use axum::{extract::State, http::HeaderMap, response::Response};
+use axum::{extract::State, http::HeaderMap, response::IntoResponse};
 use s3_core::{response::ListBucketsResponse, S3Error};
 
 use crate::server::AppState;
 
-pub async fn list_buckets(State(state): State<Arc<AppState>>, headers: HeaderMap) -> Response {
+pub async fn list_buckets(
+    State(state): State<Arc<AppState>>,
+    headers: HeaderMap,
+) -> impl IntoResponse {
     tracing::debug!(headers = ?headers, "Listing buckets");
     let response = state.backend.list_buckets().await;
     match response {

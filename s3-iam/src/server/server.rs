@@ -55,6 +55,30 @@ fn generate_secret_key() -> String {
 
 #[tonic::async_trait]
 impl iampb::iam::iam_server::Iam for S3IAMServer {
+    async fn get_key(
+        &self,
+        request: tonic::Request<iampb::iam::GetKeyRequest>,
+    ) -> Result<tonic::Response<iampb::iam::GetKeyResponse>, tonic::Status> {
+        let request = request.into_inner();
+        let keys = self.keys.read().await;
+        let key = keys.get(&request.access_key).cloned();
+        match key {
+            Some(key) => Ok(tonic::Response::new(iampb::iam::GetKeyResponse {
+                key: Some(key),
+            })),
+            None => Err(tonic::Status::not_found("Key not found")),
+        }
+    }
+
+    async fn list_keys(
+        &self,
+        _request: tonic::Request<iampb::iam::ListKeysRequest>,
+    ) -> Result<tonic::Response<iampb::iam::ListKeysResponse>, tonic::Status> {
+        let keys = self.keys.read().await;
+        let keys: Vec<_> = keys.values().cloned().collect();
+        Ok(tonic::Response::new(iampb::iam::ListKeysResponse { keys }))
+    }
+
     async fn create_user(
         &self,
         request: tonic::Request<iampb::iam::CreateUserRequest>,

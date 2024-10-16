@@ -30,7 +30,7 @@ pub async fn start_server(
     client: s3_iam::iam::iam_client::IamClient<tonic::transport::Channel>,
 ) -> Result<(), Error> {
     let backend = Arc::new(memory::InMemoryBackend::new());
-    let keys = Arc::new(refresh_keys(client).await);
+    let keys = Arc::new(refresh_keys(client.clone()).await);
     let state = Arc::new(AppState { backend, keys });
 
     let app = Router::new()
@@ -114,5 +114,7 @@ async fn handle_bucket_request(
     rest: String,
     params: HashMap<String, String>,
 ) -> Result<(), S3Error> {
+    // GetObject
+
     Ok(())
 }

@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use axum::{
+    async_trait,
     extract::{Request, State},
     http::StatusCode,
     middleware::Next,
@@ -55,12 +56,10 @@ pub async fn is_req_authenticated(
     let s3info = s3info.unwrap();
 
     match get_auth_type(&req) {
-        AuthType::SignedV4 => {
-            match super::v4::does_signature_match_v4(&req, &s3info.secret_key) {
-                Ok(_) => {}
-                Err(e) => return axum::response::IntoResponse::into_response(e),
-            }
-        }
+        AuthType::SignedV4 => match super::v4::does_signature_match_v4(&req, &s3info.secret_key) {
+            Ok(_) => {}
+            Err(e) => return axum::response::IntoResponse::into_response(e),
+        },
         _ => return axum::response::IntoResponse::into_response(S3Error::InternalError),
     }
 
