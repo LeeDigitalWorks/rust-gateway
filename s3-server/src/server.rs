@@ -1,14 +1,11 @@
 use std::collections::HashMap;
-use std::env;
 use std::io::Error;
 use std::sync::Arc;
 
-use axum::body::Bytes;
-use axum::extract::{FromRequest, Host, Path, Query, Request};
-use axum::http::HeaderMap;
+use axum::extract::Request;
 use axum::response::Response;
 use axum::routing::any;
-use axum::{extract::State, routing::get, Router};
+use axum::{extract::State, Router};
 use s3_backend::memory;
 use s3_core::S3Error;
 use s3_iam::iam::StreamKeysRequest;
@@ -19,8 +16,6 @@ use crate::authz::Authz;
 use crate::filter::{
     run_filters, AuthenticationFilter, Filter, ParserFilter, RequestIdFilter, S3Data,
 };
-
-const DEFAULT_S3_HOST: &str = "127.0.0.1:3000";
 
 pub struct AppState {
     pub backend: Arc<dyn s3_backend::Backend>,
@@ -87,8 +82,6 @@ async fn shutdown_signal() {
 }
 
 async fn handle_request(State(state): State<Arc<RwLock<AppState>>>, req: Request) -> Response {
-    let root_host = env::var("S3_HOST").unwrap_or_else(|_| DEFAULT_S3_HOST.to_string());
-
     let (parts, body) = req.into_parts();
     let body = match axum::body::to_bytes(body, usize::MAX).await {
         Ok(body) => body,
@@ -106,5 +99,10 @@ async fn handle_request(State(state): State<Arc<RwLock<AppState>>>, req: Request
         return axum::response::IntoResponse::into_response(error);
     }
 
-    axum::response::IntoResponse::into_response("".to_string())
+    // TODO: Route to the correct handler
+    match data.action {
+        _ => {
+            return axum::response::IntoResponse::into_response(S3Error::NotImplemented);
+        }
+    }
 }

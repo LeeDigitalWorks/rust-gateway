@@ -8,6 +8,6 @@ pub mod types;
 pub mod util;
 
 pub use error::S3Error;
-pub use request::S3Request;
+pub use request::S3Action;
 pub use types::{Bucket, Object, ObjectMetadata, StorageClass};
 pub use util::*;

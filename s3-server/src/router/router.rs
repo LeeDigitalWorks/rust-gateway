@@ -1,7 +1,7 @@
 use std::collections::{BTreeMap, HashMap};
 
 use axum::{body::Bytes, http::Request};
-use s3_core::S3Request;
+use s3_core::S3Action;
 
 pub struct Router {
     hosts: Vec<String>,
@@ -16,7 +16,7 @@ impl Router {
         }
     }
 
-    pub fn match_result(&self, req: &axum::http::Request<axum::body::Bytes>) -> S3Request {
+    pub fn match_result(&self, req: &axum::http::Request<axum::body::Bytes>) -> S3Action {
         let req_host = req.uri().host().unwrap_or("").to_string();
 
         for host in &self.hosts {
@@ -40,7 +40,7 @@ impl Router {
                 return self.match_route(host, bucket, key, req);
             }
         }
-        S3Request::Unknown
+        S3Action::Unknown
     }
 
     fn match_route(
@@ -49,7 +49,7 @@ impl Router {
         bucket: &str,
         key: &str,
         req: &axum::http::Request<axum::body::Bytes>,
-    ) -> S3Request {
+    ) -> S3Action {
         let method = req.method().as_str();
         let mut matcher = &self.route_matcher.key;
         if key == "" {
@@ -67,7 +67,7 @@ impl Router {
             }
         }
 
-        S3Request::Unknown
+        S3Action::Unknown
     }
 }
 
@@ -91,196 +91,196 @@ impl RouteMatcher {
         matcher.add_bucket_route(
             "GET",
             Route {
-                operation: S3Request::CreateSession,
+                operation: S3Action::CreateSession,
                 arguments: vec![has_query("session")],
             },
         );
         matcher.add_bucket_route(
             "GET",
             Route {
-                operation: S3Request::GetBucketAccelerateConfiguration,
+                operation: S3Action::GetBucketAccelerateConfiguration,
                 arguments: vec![has_query("accelerate")],
             },
         );
         matcher.add_bucket_route(
             "GET",
             Route {
-                operation: S3Request::GetBucketAcl,
+                operation: S3Action::GetBucketAcl,
                 arguments: vec![has_query("acl")],
             },
         );
         matcher.add_bucket_route(
             "GET",
             Route {
-                operation: S3Request::GetBucketAnalyticsConfiguration,
+                operation: S3Action::GetBucketAnalyticsConfiguration,
                 arguments: vec![has_query("analytics"), has_query("id")],
             },
         );
         matcher.add_bucket_route(
             "GET",
             Route {
-                operation: S3Request::GetBucketCors,
+                operation: S3Action::GetBucketCors,
                 arguments: vec![has_query("cors")],
             },
         );
         matcher.add_bucket_route(
             "GET",
             Route {
-                operation: S3Request::GetBucketEncryption,
+                operation: S3Action::GetBucketEncryption,
                 arguments: vec![has_query("encryption")],
             },
         );
         matcher.add_bucket_route(
             "GET",
             Route {
-                operation: S3Request::GetBucketInventoryConfiguration,
+                operation: S3Action::GetBucketInventoryConfiguration,
                 arguments: vec![has_query("inventory"), has_query("id")],
             },
         );
         matcher.add_bucket_route(
             "GET",
             Route {
-                operation: S3Request::GetBucketLifecycleConfiguration,
+                operation: S3Action::GetBucketLifecycleConfiguration,
                 arguments: vec![has_query("lifecycle")],
             },
         );
         matcher.add_bucket_route(
             "GET",
             Route {
-                operation: S3Request::GetBucketLocation,
+                operation: S3Action::GetBucketLocation,
                 arguments: vec![has_query("location")],
             },
         );
         matcher.add_bucket_route(
             "GET",
             Route {
-                operation: S3Request::GetBucketLogging,
+                operation: S3Action::GetBucketLogging,
                 arguments: vec![has_query("logging")],
             },
         );
         matcher.add_bucket_route(
             "GET",
             Route {
-                operation: S3Request::GetBucketMetricsConfiguration,
+                operation: S3Action::GetBucketMetricsConfiguration,
                 arguments: vec![has_query("metrics"), has_query("id")],
             },
         );
         matcher.add_bucket_route(
             "GET",
             Route {
-                operation: S3Request::GetBucketNotificationConfiguration,
+                operation: S3Action::GetBucketNotificationConfiguration,
                 arguments: vec![has_query("notification")],
             },
         );
         matcher.add_bucket_route(
             "GET",
             Route {
-                operation: S3Request::GetBucketOwnershipControls,
+                operation: S3Action::GetBucketOwnershipControls,
                 arguments: vec![has_query("ownershipControls")],
             },
         );
         matcher.add_bucket_route(
             "GET",
             Route {
-                operation: S3Request::GetBucketPolicy,
+                operation: S3Action::GetBucketPolicy,
                 arguments: vec![has_query("policy")],
             },
         );
         matcher.add_bucket_route(
             "GET",
             Route {
-                operation: S3Request::GetBucketReplication,
+                operation: S3Action::GetBucketReplication,
                 arguments: vec![has_query("replication")],
             },
         );
         matcher.add_bucket_route(
             "GET",
             Route {
-                operation: S3Request::GetBucketRequestPayment,
+                operation: S3Action::GetBucketRequestPayment,
                 arguments: vec![has_query("requestPayment")],
             },
         );
         matcher.add_bucket_route(
             "GET",
             Route {
-                operation: S3Request::GetBucketTagging,
+                operation: S3Action::GetBucketTagging,
                 arguments: vec![has_query("tagging")],
             },
         );
         matcher.add_bucket_route(
             "GET",
             Route {
-                operation: S3Request::GetBucketVersioning,
+                operation: S3Action::GetBucketVersioning,
                 arguments: vec![has_query("versioning")],
             },
         );
         matcher.add_bucket_route(
             "GET",
             Route {
-                operation: S3Request::GetBucketWebsite,
+                operation: S3Action::GetBucketWebsite,
                 arguments: vec![has_query("website")],
             },
         );
         matcher.add_bucket_route(
             "GET",
             Route {
-                operation: S3Request::ListBucketAnalyticsConfigurations,
+                operation: S3Action::ListBucketAnalyticsConfigurations,
                 arguments: vec![has_query("analytics")],
             },
         );
         matcher.add_bucket_route(
             "GET",
             Route {
-                operation: S3Request::ListBucketInventoryConfigurations,
+                operation: S3Action::ListBucketInventoryConfigurations,
                 arguments: vec![has_query("inventory")],
             },
         );
         matcher.add_bucket_route(
             "GET",
             Route {
-                operation: S3Request::ListBucketMetricsConfigurations,
+                operation: S3Action::ListBucketMetricsConfigurations,
                 arguments: vec![has_query("metrics")],
             },
         );
         matcher.add_bucket_route(
             "GET",
             Route {
-                operation: S3Request::ListMultipartUploads,
+                operation: S3Action::ListMultipartUploads,
                 arguments: vec![has_query("uploads")],
             },
         );
         matcher.add_bucket_route(
             "GET",
             Route {
-                operation: S3Request::ListObjects,
+                operation: S3Action::ListObjects,
                 arguments: vec![],
             },
         );
         matcher.add_bucket_route(
             "GET",
             Route {
-                operation: S3Request::ListObjectsV2,
+                operation: S3Action::ListObjectsV2,
                 arguments: vec![has_query_value("list-type", "2")],
             },
         );
         matcher.add_bucket_route(
             "GET",
             Route {
-                operation: S3Request::ListObjectVersions,
+                operation: S3Action::ListObjectVersions,
                 arguments: vec![has_query("versions")],
             },
         );
         matcher.add_bucket_route(
             "HEAD",
             Route {
-                operation: S3Request::HeadBucket,
+                operation: S3Action::HeadBucket,
                 arguments: vec![],
             },
         );
         matcher.add_bucket_route(
             "OPTIONS",
             Route {
-                operation: S3Request::OptionsPreflight,
+                operation: S3Action::OptionsPreflight,
                 arguments: vec![
                     has_header("Access-Control-Request-Method"),
                     has_header("Origin"),
@@ -290,252 +290,252 @@ impl RouteMatcher {
         matcher.add_bucket_route(
             "DELETE",
             Route {
-                operation: S3Request::DeleteBucketAnalyticsConfiguration,
+                operation: S3Action::DeleteBucketAnalyticsConfiguration,
                 arguments: vec![has_query("analytics"), has_query("id")],
             },
         );
         matcher.add_bucket_route(
             "DELETE",
             Route {
-                operation: S3Request::DeleteBucketCors,
+                operation: S3Action::DeleteBucketCors,
                 arguments: vec![has_query("cors")],
             },
         );
         matcher.add_bucket_route(
             "DELETE",
             Route {
-                operation: S3Request::DeleteBucketEncryption,
+                operation: S3Action::DeleteBucketEncryption,
                 arguments: vec![has_query("encryption")],
             },
         );
         matcher.add_bucket_route(
             "DELETE",
             Route {
-                operation: S3Request::DeleteBucketInventoryConfiguration,
+                operation: S3Action::DeleteBucketInventoryConfiguration,
                 arguments: vec![has_query("inventory"), has_query("id")],
             },
         );
         matcher.add_bucket_route(
             "DELETE",
             Route {
-                operation: S3Request::DeleteBucketLifecycle,
+                operation: S3Action::DeleteBucketLifecycle,
                 arguments: vec![has_query("lifecycle")],
             },
         );
         matcher.add_bucket_route(
             "DELETE",
             Route {
-                operation: S3Request::DeleteBucketMetricsConfiguration,
+                operation: S3Action::DeleteBucketMetricsConfiguration,
                 arguments: vec![has_query("metrics"), has_query("id")],
             },
         );
         matcher.add_bucket_route(
             "DELETE",
             Route {
-                operation: S3Request::DeleteBucketOwnershipControls,
+                operation: S3Action::DeleteBucketOwnershipControls,
                 arguments: vec![has_query("ownershipControls")],
             },
         );
         matcher.add_bucket_route(
             "DELETE",
             Route {
-                operation: S3Request::DeleteBucketPolicy,
+                operation: S3Action::DeleteBucketPolicy,
                 arguments: vec![has_query("policy")],
             },
         );
         matcher.add_bucket_route(
             "DELETE",
             Route {
-                operation: S3Request::DeleteBucketReplication,
+                operation: S3Action::DeleteBucketReplication,
                 arguments: vec![has_query("replication")],
             },
         );
         matcher.add_bucket_route(
             "DELETE",
             Route {
-                operation: S3Request::DeleteBucketTagging,
+                operation: S3Action::DeleteBucketTagging,
                 arguments: vec![has_query("tagging")],
             },
         );
         matcher.add_bucket_route(
             "DELETE",
             Route {
-                operation: S3Request::DeleteBucketWebsite,
+                operation: S3Action::DeleteBucketWebsite,
                 arguments: vec![has_query("website")],
             },
         );
         matcher.add_bucket_route(
             "DELETE",
             Route {
-                operation: S3Request::DeleteBucketIntelligentTieringConfiguration,
+                operation: S3Action::DeleteBucketIntelligentTieringConfiguration,
                 arguments: vec![has_query("intelligent-tiering"), has_query("id")],
             },
         );
         matcher.add_bucket_route(
             "DELETE",
             Route {
-                operation: S3Request::DeletePublicAccessBlock,
+                operation: S3Action::DeletePublicAccessBlock,
                 arguments: vec![has_query("publicAccessBlock")],
             },
         );
         matcher.add_bucket_route(
             "DELETE",
             Route {
-                operation: S3Request::DeleteBucket,
+                operation: S3Action::DeleteBucket,
                 arguments: vec![],
             },
         );
         matcher.add_bucket_route(
             "POST",
             Route {
-                operation: S3Request::DeleteObjects,
+                operation: S3Action::DeleteObjects,
                 arguments: vec![has_query("delete")],
             },
         );
         matcher.add_bucket_route(
             "POST",
             Route {
-                operation: S3Request::PostObject,
+                operation: S3Action::PostObject,
                 arguments: vec![has_header_value("Content-Type", "multipart/form-data")],
             },
         );
         matcher.add_bucket_route(
             "PUT",
             Route {
-                operation: S3Request::PutBucketAccelerateConfiguration,
+                operation: S3Action::PutBucketAccelerateConfiguration,
                 arguments: vec![has_query("accelerate")],
             },
         );
         matcher.add_bucket_route(
             "PUT",
             Route {
-                operation: S3Request::PutBucketAcl,
+                operation: S3Action::PutBucketAcl,
                 arguments: vec![has_query("acl")],
             },
         );
         matcher.add_bucket_route(
             "PUT",
             Route {
-                operation: S3Request::PutBucketAnalyticsConfiguration,
+                operation: S3Action::PutBucketAnalyticsConfiguration,
                 arguments: vec![has_query("analytics"), has_query("id")],
             },
         );
         matcher.add_bucket_route(
             "PUT",
             Route {
-                operation: S3Request::PutBucketCors,
+                operation: S3Action::PutBucketCors,
                 arguments: vec![has_query("cors")],
             },
         );
         matcher.add_bucket_route(
             "PUT",
             Route {
-                operation: S3Request::PutBucketEncryption,
+                operation: S3Action::PutBucketEncryption,
                 arguments: vec![has_query("encryption")],
             },
         );
         matcher.add_bucket_route(
             "PUT",
             Route {
-                operation: S3Request::PutBucketInventoryConfiguration,
+                operation: S3Action::PutBucketInventoryConfiguration,
                 arguments: vec![has_query("inventory"), has_query("id")],
             },
         );
         matcher.add_bucket_route(
             "PUT",
             Route {
-                operation: S3Request::PutBucketLifecycleConfiguration,
+                operation: S3Action::PutBucketLifecycleConfiguration,
                 arguments: vec![has_query("lifecycle")],
             },
         );
         matcher.add_bucket_route(
             "PUT",
             Route {
-                operation: S3Request::PutBucketLogging,
+                operation: S3Action::PutBucketLogging,
                 arguments: vec![has_query("logging")],
             },
         );
         matcher.add_bucket_route(
             "PUT",
             Route {
-                operation: S3Request::PutBucketMetricsConfiguration,
+                operation: S3Action::PutBucketMetricsConfiguration,
                 arguments: vec![has_query("metrics"), has_query("id")],
             },
         );
         matcher.add_bucket_route(
             "PUT",
             Route {
-                operation: S3Request::PutBucketNotificationConfiguration,
+                operation: S3Action::PutBucketNotificationConfiguration,
                 arguments: vec![has_query("notification")],
             },
         );
         matcher.add_bucket_route(
             "PUT",
             Route {
-                operation: S3Request::PutBucketOwnershipControls,
+                operation: S3Action::PutBucketOwnershipControls,
                 arguments: vec![has_query("ownershipControls")],
             },
         );
         matcher.add_bucket_route(
             "PUT",
             Route {
-                operation: S3Request::PutBucketPolicy,
+                operation: S3Action::PutBucketPolicy,
                 arguments: vec![has_query("policy")],
             },
         );
         matcher.add_bucket_route(
             "PUT",
             Route {
-                operation: S3Request::PutBucketReplication,
+                operation: S3Action::PutBucketReplication,
                 arguments: vec![has_query("replication")],
             },
         );
         matcher.add_bucket_route(
             "PUT",
             Route {
-                operation: S3Request::PutBucketRequestPayment,
+                operation: S3Action::PutBucketRequestPayment,
                 arguments: vec![has_query("requestPayment")],
             },
         );
         matcher.add_bucket_route(
             "PUT",
             Route {
-                operation: S3Request::PutBucketTagging,
+                operation: S3Action::PutBucketTagging,
                 arguments: vec![has_query("tagging")],
             },
         );
         matcher.add_bucket_route(
             "PUT",
             Route {
-                operation: S3Request::PutBucketVersioning,
+                operation: S3Action::PutBucketVersioning,
                 arguments: vec![has_query("versioning")],
             },
         );
         matcher.add_bucket_route(
             "PUT",
             Route {
-                operation: S3Request::PutBucketWebsite,
+                operation: S3Action::PutBucketWebsite,
                 arguments: vec![has_query("website")],
             },
         );
         matcher.add_bucket_route(
             "PUT",
             Route {
-                operation: S3Request::PutBucketIntelligentTieringConfiguration,
+                operation: S3Action::PutBucketIntelligentTieringConfiguration,
                 arguments: vec![has_query("intelligent-tiering"), has_query("id")],
             },
         );
         matcher.add_bucket_route(
             "PUT",
             Route {
-                operation: S3Request::PutPublicAccessBlock,
+                operation: S3Action::PutPublicAccessBlock,
                 arguments: vec![has_query("publicAccessBlock")],
             },
         );
         matcher.add_bucket_route(
             "PUT",
             Route {
-                operation: S3Request::CreateBucket,
+                operation: S3Action::CreateBucket,
                 arguments: vec![],
             },
         );
@@ -543,189 +543,189 @@ impl RouteMatcher {
         matcher.add_key_route(
             "GET",
             Route {
-                operation: S3Request::GetObject,
+                operation: S3Action::GetObject,
                 arguments: vec![],
             },
         );
         matcher.add_key_route(
             "GET",
             Route {
-                operation: S3Request::GetObjectAcl,
+                operation: S3Action::GetObjectAcl,
                 arguments: vec![has_query("acl")],
             },
         );
         matcher.add_key_route(
             "GET",
             Route {
-                operation: S3Request::GetObjectAttributes,
+                operation: S3Action::GetObjectAttributes,
                 arguments: vec![has_query("attributes")],
             },
         );
         matcher.add_key_route(
             "GET",
             Route {
-                operation: S3Request::GetObjectLegalHold,
+                operation: S3Action::GetObjectLegalHold,
                 arguments: vec![has_query("legal-hold")],
             },
         );
         matcher.add_key_route(
             "GET",
             Route {
-                operation: S3Request::GetObjectLockConfiguration,
+                operation: S3Action::GetObjectLockConfiguration,
                 arguments: vec![has_query("lock")],
             },
         );
         matcher.add_key_route(
             "GET",
             Route {
-                operation: S3Request::GetObjectRetention,
+                operation: S3Action::GetObjectRetention,
                 arguments: vec![has_query("retention")],
             },
         );
         matcher.add_key_route(
             "GET",
             Route {
-                operation: S3Request::GetObjectTagging,
+                operation: S3Action::GetObjectTagging,
                 arguments: vec![has_query("tagging")],
             },
         );
         matcher.add_key_route(
             "GET",
             Route {
-                operation: S3Request::GetObjectTorrent,
+                operation: S3Action::GetObjectTorrent,
                 arguments: vec![has_query("torrent")],
             },
         );
         matcher.add_key_route(
             "GET",
             Route {
-                operation: S3Request::ListParts,
+                operation: S3Action::ListParts,
                 arguments: vec![has_query("uploadId")],
             },
         );
         matcher.add_key_route(
             "HEAD",
             Route {
-                operation: S3Request::HeadObject,
+                operation: S3Action::HeadObject,
                 arguments: vec![],
             },
         );
         matcher.add_key_route(
             "DELETE",
             Route {
-                operation: S3Request::DeleteObject,
+                operation: S3Action::DeleteObject,
                 arguments: vec![],
             },
         );
         matcher.add_key_route(
             "DELETE",
             Route {
-                operation: S3Request::DeleteObjectTagging,
+                operation: S3Action::DeleteObjectTagging,
                 arguments: vec![has_query("tagging")],
             },
         );
         matcher.add_key_route(
             "DELETE",
             Route {
-                operation: S3Request::AbortMultipartUpload,
+                operation: S3Action::AbortMultipartUpload,
                 arguments: vec![has_query("uploadId")],
             },
         );
         matcher.add_key_route(
             "POST",
             Route {
-                operation: S3Request::PostObject,
+                operation: S3Action::PostObject,
                 arguments: vec![has_header_value("Content-Type", "multipart/form-data")],
             },
         );
         matcher.add_key_route(
             "POST",
             Route {
-                operation: S3Request::CompleteMultipartUpload,
+                operation: S3Action::CompleteMultipartUpload,
                 arguments: vec![has_query("uploadId")],
             },
         );
         matcher.add_key_route(
             "POST",
             Route {
-                operation: S3Request::RestoreObject,
+                operation: S3Action::RestoreObject,
                 arguments: vec![has_query("restore")],
             },
         );
         matcher.add_key_route(
             "POST",
             Route {
-                operation: S3Request::CreateMultipartUpload,
+                operation: S3Action::CreateMultipartUpload,
                 arguments: vec![has_query("uploads")],
             },
         );
         matcher.add_key_route(
             "POST",
             Route {
-                operation: S3Request::SelectObjectContent,
+                operation: S3Action::SelectObjectContent,
                 arguments: vec![has_query("select"), has_query_value("select-type", "2")],
             },
         );
         matcher.add_key_route(
             "PUT",
             Route {
-                operation: S3Request::CopyObject,
+                operation: S3Action::CopyObject,
                 arguments: vec![has_header("x-amz-copy-source")],
             },
         );
         matcher.add_key_route(
             "PUT",
             Route {
-                operation: S3Request::PutObject,
+                operation: S3Action::PutObject,
                 arguments: vec![],
             },
         );
         matcher.add_key_route(
             "PUT",
             Route {
-                operation: S3Request::PutObjectAcl,
+                operation: S3Action::PutObjectAcl,
                 arguments: vec![has_query("acl")],
             },
         );
         matcher.add_key_route(
             "PUT",
             Route {
-                operation: S3Request::PutObjectLegalHold,
+                operation: S3Action::PutObjectLegalHold,
                 arguments: vec![has_query("legal-hold")],
             },
         );
         matcher.add_key_route(
             "PUT",
             Route {
-                operation: S3Request::PutObjectLockConfiguration,
+                operation: S3Action::PutObjectLockConfiguration,
                 arguments: vec![has_query("lock")],
             },
         );
         matcher.add_key_route(
             "PUT",
             Route {
-                operation: S3Request::PutObjectRetention,
+                operation: S3Action::PutObjectRetention,
                 arguments: vec![has_query("retention")],
             },
         );
         matcher.add_key_route(
             "PUT",
             Route {
-                operation: S3Request::PutObjectTagging,
+                operation: S3Action::PutObjectTagging,
                 arguments: vec![has_query("tagging")],
             },
         );
         matcher.add_key_route(
             "PUT",
             Route {
-                operation: S3Request::UploadPart,
+                operation: S3Action::UploadPart,
                 arguments: vec![has_query("uploadId"), has_query("partNumber")],
             },
         );
         matcher.add_key_route(
             "PUT",
             Route {
-                operation: S3Request::UploadPartCopy,
+                operation: S3Action::UploadPartCopy,
                 arguments: vec![
                     has_query("uploadId"),
                     has_query("partNumber"),
@@ -736,7 +736,7 @@ impl RouteMatcher {
         matcher.add_key_route(
             "OPTIONS",
             Route {
-                operation: S3Request::OptionsPreflight,
+                operation: S3Action::OptionsPreflight,
                 arguments: vec![
                     has_header("Access-Control-Request-Method"),
                     has_header("Origin"),
@@ -747,14 +747,14 @@ impl RouteMatcher {
         matcher.add_root_route(
             "GET",
             Route {
-                operation: S3Request::ListBuckets,
+                operation: S3Action::ListBuckets,
                 arguments: vec![],
             },
         );
         matcher.add_root_route(
             "PUT",
             Route {
-                operation: S3Request::WriteGetObjectResponse,
+                operation: S3Action::WriteGetObjectResponse,
                 arguments: vec![
                     has_query("x-amz-request-route"),
                     has_query("x-amz-request-token"),
@@ -788,14 +788,14 @@ impl RouteMatcher {
 }
 
 struct Route {
-    operation: S3Request,
+    operation: S3Action,
     arguments: Vec<HasArguments>,
 }
 
 impl Route {
     pub fn new() -> Self {
         Route {
-            operation: S3Request::Unknown,
+            operation: S3Action::Unknown,
             arguments: vec![],
         }
     }

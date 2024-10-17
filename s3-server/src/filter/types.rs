@@ -2,7 +2,7 @@ use axum::{
     async_trait,
     body::{Body, Bytes},
 };
-use s3_core::{response::ResponseData, S3Error, S3Request};
+use s3_core::{response::ResponseData, S3Error, S3Action};
 
 #[async_trait]
 pub trait Filter: Send + Sync {
@@ -32,7 +32,7 @@ pub struct S3Data {
     // Host the request is for (with the bucket removed)
     pub host: String,
 
-    pub operation: S3Request,
+    pub action: S3Action,
 }
 
 impl S3Data {
@@ -47,7 +47,7 @@ impl S3Data {
             bucket_name: "".to_string(),
             key: "".to_string(),
             host: "".to_string(),
-            operation: S3Request::Unknown,
+            action: S3Action::Unknown,
         }
     }
 }
@@ -60,6 +60,6 @@ pub async fn run_filters(
         filter.handle(data).await?;
     }
 
-    tracing::debug!(operation = ?data.operation, "Request completed");
+    tracing::debug!(operation = ?data.action, "Request completed");
     Ok(())
 }
