@@ -35,6 +35,7 @@ pub async fn start_server(
 ) -> Result<(), Error> {
     let backend = Arc::new(memory::InMemoryBackend::new());
     let keys = Arc::new(refresh_keys(client.clone()).await);
+
     let filters: Vec<Box<dyn Filter>> = vec![
         Box::new(RequestIdFilter::new()),
         Box::new(AuthenticationFilter::new(Authz::new(client))),
@@ -48,6 +49,7 @@ pub async fn start_server(
 
     let app = Router::new()
         .route("/", any(handle_request))
+        .route("/*rest", any(handle_request))
         .with_state(Arc::clone(&state));
 
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
