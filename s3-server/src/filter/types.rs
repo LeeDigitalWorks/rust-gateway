@@ -2,9 +2,13 @@ use axum::{
     async_trait,
     body::{Body, Bytes},
 };
+<<<<<<< HEAD
 use s3_core::{response::ResponseData, S3Action, S3Error};
 
 use crate::authz::Key;
+=======
+use s3_core::{response::ResponseData, S3Error, S3Action};
+>>>>>>> 268c362 (introduce index handler)
 
 #[async_trait]
 pub trait Filter: Send + Sync {
