@@ -1,0 +1,10 @@
+[package]
+name = "s3-backend"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+async-trait = { workspace = true }
+chrono = { workspace = true }
+thiserror = { workspace = true }
+s3-core = { path = "../s3-core" }

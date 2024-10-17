@@ -1,0 +1,113 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package iam;
+
+message User {
+    uint64 id = 1;
+    string name = 2;
+    string email = 3;
+    google.protobuf.Timestamp created_at = 4;
+    repeated Key keys = 5;
+}
+
+message Key {
+    uint64 id = 1;
+    uint64 user_id = 2;
+    string name = 3;
+    string access_key = 4;
+    string secret_key = 5;
+    google.protobuf.Timestamp created_at = 6;
+    repeated Grant grants = 7;
+}
+
+message Grant {
+    uint64 id = 1;
+    uint64 user_id = 2;
+    uint64 key_id = 3;
+    string bucket = 4;
+    string object = 5;
+    Permission permission = 6;
+}
+
+enum Permission {
+  FULL_ACCESS = 0;
+  READ_ONLY = 1;
+  READ_WRITE = 2;
+}
+
+message CreateUserRequest {
+    string name = 1;
+    string email = 2;
+}
+
+message CreateUserResponse {
+    User user = 1;
+}
+
+message GetUserRequest {
+    uint64 id = 1;
+}
+
+message GetUserResponse {
+    User user = 1;
+}
+
+message DeleteUserRequest {
+    uint64 id = 1;
+}
+
+message DeleteUserResponse {}
+
+message CreateKeyRequest {
+    uint64 user_id = 1;
+    string name = 2;
+    Grant grant = 3;
+}
+
+message CreateKeyResponse {
+    Key key = 1;
+}
+
+message DeleteKeyRequest {
+    uint64 user_id = 1;
+    string access_key = 2;
+}
+
+message DeleteKeyResponse {}
+
+message ListKeysRequest {
+    uint64 user_id = 1;
+}
+
+message ListKeysResponse {
+    repeated Key keys = 1;
+}
+
+message StreamKeysRequest {
+    google.protobuf.Timestamp since_time = 1;
+}
+
+message StreamKeysResponse {
+    Key key = 1;
+}
+
+message GetKeyRequest {
+    string access_key = 1;
+}
+
+message GetKeyResponse {
+    Key key = 1;
+}
+
+service IAM {
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse) {}
+  rpc GetUser(GetUserRequest) returns (GetUserResponse) {}
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse) {}
+  rpc CreateKey(CreateKeyRequest) returns (CreateKeyResponse) {}
+  rpc DeleteKey(DeleteKeyRequest) returns (DeleteKeyResponse) {}
+  rpc StreamKeys(StreamKeysRequest) returns (stream StreamKeysResponse) {}
+  rpc ListKeys(ListKeysRequest) returns (ListKeysResponse) {}
+  rpc GetKey(GetKeyRequest) returns (GetKeyResponse) {}
+}

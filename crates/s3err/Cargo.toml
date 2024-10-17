@@ -1,8 +1,0 @@
-[package]
-name = "s3err"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-actix-web = { workspace = true }
-phf = { version = "0.11.2", features = ["macros"] }
