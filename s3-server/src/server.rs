@@ -102,7 +102,6 @@ async fn handle_request(State(state): State<Arc<RwLock<AppState>>>, req: Request
     data.req = request;
     let mut filters = &mut state.write().await.filters;
     let response = run_filters(&mut filters, &mut data).await;
-
     if let Err(error) = response {
         return axum::response::IntoResponse::into_response(error);
     }
