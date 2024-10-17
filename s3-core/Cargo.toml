@@ -11,3 +11,4 @@ serde = { workspace = true }
 serde_derive = { workspace = true }
 bytes = "1.7.2"
 quick-xml = { workspace = true }
+http = "1.1.0"

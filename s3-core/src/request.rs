@@ -1,64 +1,114 @@
-use super::types::ObjectMetadata;
-
+// Valid S3 Requests
+// https://docs.aws.amazon.com/AmazonS3/latest/API/API_Operations_Amazon_Simple_Storage_Service.html
+//
+// Removed:
+// - GetBucketLifecycle
+// - GetBucketNotification
+// - ListDirectoryBuckets
+// - PutBucketLifecycle
+// - PutBucketNotification
+//
+// Added:
+// - OptionsPreflight
+// - PostObject
 #[derive(Default, Debug, Clone, PartialEq)]
 pub enum S3Request {
     #[default]
     Unknown,
+    AbortMultipartUpload,
+    CompleteMultipartUpload,
+    CopyObject,
+    CreateBucket,
+    CreateMultipartUpload,
+    CreateSession,
+    DeleteBucket,
+    DeleteBucketAnalyticsConfiguration,
+    DeleteBucketCors,
+    DeleteBucketEncryption,
+    DeleteBucketIntelligentTieringConfiguration,
+    DeleteBucketInventoryConfiguration,
+    DeleteBucketLifecycle,
+    DeleteBucketMetricsConfiguration,
+    DeleteBucketOwnershipControls,
+    DeleteBucketPolicy,
+    DeleteBucketReplication,
+    DeleteBucketTagging,
+    DeleteBucketWebsite,
+    DeleteObject,
+    DeleteObjects,
+    DeleteObjectTagging,
+    DeletePublicAccessBlock,
+    GetBucketAccelerateConfiguration,
+    GetBucketAcl,
+    GetBucketAnalyticsConfiguration,
+    GetBucketCors,
+    GetBucketEncryption,
+    GetBucketIntelligentTieringConfiguration,
+    GetBucketInventoryConfiguration,
+    GetBucketLifecycleConfiguration,
+    GetBucketLocation,
+    GetBucketLogging,
+    GetBucketMetricsConfiguration,
+    GetBucketNotificationConfiguration,
+    GetBucketOwnershipControls,
+    GetBucketPolicy,
+    GetBucketPolicyStatus,
+    GetBucketReplication,
+    GetBucketRequestPayment,
+    GetBucketTagging,
+    GetBucketVersioning,
+    GetBucketWebsite,
+    GetObject,
+    GetObjectAcl,
+    GetObjectAttributes,
+    GetObjectLegalHold,
+    GetObjectLockConfiguration,
+    GetObjectRetention,
+    GetObjectTagging,
+    GetObjectTorrent,
+    GetPublicAccessBlock,
+    HeadBucket,
+    HeadObject,
+    ListBucketAnalyticsConfigurations,
+    ListBucketIntelligentTieringConfigurations,
+    ListBucketInventoryConfigurations,
+    ListBucketMetricsConfigurations,
     ListBuckets,
-    CreateBucket {
-        name: String,
-    },
-    DeleteBucket {
-        name: String,
-    },
-    ListObjects {
-        bucket: String,
-        prefix: Option<String>,
-        delimiter: Option<String>,
-        max_keys: Option<usize>,
-        continuation_token: Option<String>,
-    },
-    GetObject {
-        bucket: String,
-        key: String,
-    },
-    PutObject {
-        bucket: String,
-        key: String,
-        data: Vec<u8>,
-        metadata: ObjectMetadata,
-    },
-    DeleteObject {
-        bucket: String,
-        key: String,
-    },
-    HeadObject {
-        bucket: String,
-        key: String,
-    },
-}
-
-impl S3Request {
-    pub fn bucket_name(&self) -> Option<&str> {
-        match self {
-            S3Request::CreateBucket { name } => Some(name),
-            S3Request::DeleteBucket { name } => Some(name),
-            S3Request::ListObjects { bucket, .. } => Some(bucket),
-            S3Request::GetObject { bucket, .. } => Some(bucket),
-            S3Request::PutObject { bucket, .. } => Some(bucket),
-            S3Request::DeleteObject { bucket, .. } => Some(bucket),
-            S3Request::HeadObject { bucket, .. } => Some(bucket),
-            _ => None,
-        }
-    }
-
-    pub fn object_key(&self) -> Option<&str> {
-        match self {
-            S3Request::GetObject { key, .. } => Some(key),
-            S3Request::PutObject { key, .. } => Some(key),
-            S3Request::DeleteObject { key, .. } => Some(key),
-            S3Request::HeadObject { key, .. } => Some(key),
-            _ => None,
-        }
-    }
+    ListMultipartUploads,
+    ListObjects,
+    ListObjectsV2,
+    ListObjectVersions,
+    ListParts,
+    OptionsPreflight,
+    PostObject,
+    PutBucketAccelerateConfiguration,
+    PutBucketAcl,
+    PutBucketAnalyticsConfiguration,
+    PutBucketCors,
+    PutBucketEncryption,
+    PutBucketIntelligentTieringConfiguration,
+    PutBucketInventoryConfiguration,
+    PutBucketLifecycleConfiguration,
+    PutBucketLogging,
+    PutBucketMetricsConfiguration,
+    PutBucketNotificationConfiguration,
+    PutBucketOwnershipControls,
+    PutBucketPolicy,
+    PutBucketReplication,
+    PutBucketRequestPayment,
+    PutBucketTagging,
+    PutBucketVersioning,
+    PutBucketWebsite,
+    PutObject,
+    PutObjectAcl,
+    PutObjectLegalHold,
+    PutObjectLockConfiguration,
+    PutObjectRetention,
+    PutObjectTagging,
+    PutPublicAccessBlock,
+    RestoreObject,
+    SelectObjectContent,
+    UploadPart,
+    UploadPartCopy,
+    WriteGetObjectResponse,
 }

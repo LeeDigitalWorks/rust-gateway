@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-axum = { workspace = true }
+axum = { workspace = true, features = ["multipart", "macros"] }
 tokio = { workspace = true }
 tonic = { workspace = true }
 tracing = "0.1.40"
@@ -19,3 +19,4 @@ md-5 = "0.10.6"
 base64 = "0.22.1"
 const-hex = "1.13.1"
 subtle = "2.6.1"
+uuid = { version = "1.11.0", features = ["fast-rng", "v4"] }

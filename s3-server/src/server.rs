@@ -3,45 +3,52 @@ use std::env;
 use std::io::Error;
 use std::sync::Arc;
 
-use axum::extract::{Host, Path, Query};
+use axum::body::Bytes;
+use axum::extract::{FromRequest, Host, Path, Query, Request};
 use axum::http::HeaderMap;
-use axum::middleware;
-use axum::response::{IntoResponse, Response};
+use axum::response::Response;
 use axum::routing::any;
 use axum::{extract::State, routing::get, Router};
 use s3_backend::memory;
 use s3_core::S3Error;
 use s3_iam::iam::StreamKeysRequest;
 use tokio::signal::unix::{signal, SignalKind};
+use tokio::sync::RwLock;
 
-use crate::authz::is_req_authenticated;
-use crate::handler::list_buckets;
-use crate::limiter::is_req_limited;
+use crate::authz::Authz;
+use crate::filter::{
+    run_filters, AuthenticationFilter, Filter, ParserFilter, RequestIdFilter, S3Data,
+};
 
 const DEFAULT_S3_HOST: &str = "127.0.0.1:3000";
 
 pub struct AppState {
     pub backend: Arc<dyn s3_backend::Backend>,
     pub keys: Arc<HashMap<String, s3_iam::iampb::iam::Key>>,
+    pub filters: Vec<Box<dyn Filter>>,
 }
 
 pub async fn start_server(
     addr: &str,
+    hosts: Vec<String>,
     client: s3_iam::iam::iam_client::IamClient<tonic::transport::Channel>,
 ) -> Result<(), Error> {
     let backend = Arc::new(memory::InMemoryBackend::new());
     let keys = Arc::new(refresh_keys(client.clone()).await);
-    let state = Arc::new(AppState { backend, keys });
+    let filters: Vec<Box<dyn Filter>> = vec![
+        Box::new(RequestIdFilter::new()),
+        Box::new(AuthenticationFilter::new(Authz::new(client))),
+        Box::new(ParserFilter::new(hosts)),
+    ];
+    let state = Arc::new(RwLock::new(AppState {
+        backend,
+        keys,
+        filters,
+    }));
 
     let app = Router::new()
-        .route("/", get(list_buckets))
-        .route("/*rest", any(handle_request))
-        .with_state(Arc::clone(&state))
-        .layer(middleware::from_fn_with_state(
-            Arc::clone(&state),
-            is_req_authenticated,
-        ))
-        .layer(middleware::from_fn(is_req_limited));
+        .route("/", any(handle_request))
+        .with_state(Arc::clone(&state));
 
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     tracing::debug!("listening on {}", listener.local_addr().unwrap());
@@ -77,44 +84,26 @@ async fn shutdown_signal() {
     }
 }
 
-async fn handle_request(
-    Host(host): Host,
-    Path(rest): Path<String>,
-    Query(query): Query<HashMap<String, String>>,
-    State(state): State<Arc<AppState>>,
-    headers: HeaderMap,
-) -> Response {
+async fn handle_request(State(state): State<Arc<RwLock<AppState>>>, req: Request) -> Response {
     let root_host = env::var("S3_HOST").unwrap_or_else(|_| DEFAULT_S3_HOST.to_string());
 
-    tracing::debug!(host = ?host, rest = ?rest, query = ?query, "Handling request");
-
-    // Handle path style requests
-    if root_host == host {
-        let bucket = rest.split('/').next().unwrap().to_string();
-        let rest = rest.split('/').skip(1).collect::<Vec<_>>().join("/");
-        let response = handle_bucket_request(bucket, rest, query).await;
-        match response {
-            Ok(_) => return axum::response::IntoResponse::into_response("".to_string()),
-            Err(error) => return axum::response::IntoResponse::into_response(error),
+    let (parts, body) = req.into_parts();
+    let body = match axum::body::to_bytes(body, usize::MAX).await {
+        Ok(body) => body,
+        Err(_) => {
+            return axum::response::IntoResponse::into_response(S3Error::InvalidRequest);
         }
-    }
-    // Handle virtual host style requests
-    else {
-        let bucket = host.split('.').next().unwrap().to_string();
-        let response = handle_bucket_request(bucket, rest, query).await;
-        match response {
-            Ok(_) => return axum::response::IntoResponse::into_response("".to_string()),
-            Err(error) => return axum::response::IntoResponse::into_response(error),
-        }
-    }
-}
+    };
+    let request = Request::<axum::body::Bytes>::from_parts(parts, body);
 
-async fn handle_bucket_request(
-    bucket: String,
-    rest: String,
-    params: HashMap<String, String>,
-) -> Result<(), S3Error> {
-    // GetObject
+    let mut data = S3Data::new();
+    data.req = request;
+    let mut filters = &mut state.write().await.filters;
+    let response = run_filters(&mut filters, &mut data).await;
 
-    Ok(())
+    if let Err(error) = response {
+        return axum::response::IntoResponse::into_response(error);
+    }
+
+    axum::response::IntoResponse::into_response("".to_string())
 }

@@ -6,10 +6,21 @@ use serde_derive::Deserialize;
 
 use crate::types::{BucketContainer, Owner};
 
+#[derive(Debug)]
 pub struct ResponseData {
     bytes: Bytes,
     status_code: u16,
     headers: HashMap<String, String>,
+}
+
+impl ResponseData {
+    pub fn new() -> Self {
+        Self {
+            bytes: Bytes::new(),
+            status_code: http::StatusCode::NOT_IMPLEMENTED.into(),
+            headers: HashMap::new(),
+        }
+    }
 }
 
 impl IntoResponse for ResponseData {

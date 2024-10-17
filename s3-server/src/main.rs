@@ -1,7 +1,8 @@
 mod authz;
+mod filter;
 mod handler;
 mod limiter;
-mod request;
+mod router;
 mod server;
 
 #[tokio::main]
@@ -13,7 +14,9 @@ async fn main() {
         .await
         .unwrap();
 
+    let hosts = vec!["127.0.0.1:3000".to_string()];
+
     let port = std::env::var("PORT").unwrap_or_else(|_| "3000".to_string());
     let addr = format!("0.0.0.0:{port}");
-    server::start_server(&addr, client).await.unwrap();
+    server::start_server(&addr, hosts, client).await.unwrap();
 }
