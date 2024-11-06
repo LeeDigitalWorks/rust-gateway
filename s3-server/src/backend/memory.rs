@@ -1,10 +1,14 @@
 use axum::async_trait;
+use chrono::Timelike;
 use s3_core::response::ListBucketsResponse;
 use s3_core::types::{BucketContainer, Owner};
-use s3_core::{Bucket, S3Error};
+use s3_core::S3Error;
+use uuid::{Timestamp, Uuid};
 
 use std::collections::HashMap;
 use std::sync::RwLock;
+
+use super::types::Bucket;
 
 pub struct InMemoryBackend {
     // The key is the bucket name, and the value is a map of object keys to object data.
@@ -46,8 +50,16 @@ impl crate::backend::Indexer for InMemoryBackend {
 
     async fn list_buckets(&self, user_id: &u64) -> Result<ListBucketsResponse, S3Error> {
         let buckets = self.owner_buckets.read().unwrap();
-        let buckets = buckets.get(user_id).unwrap_or(&vec![]).to_owned();
-        tracing::debug!(buckets = ?buckets, "Listed buckets");
+        let buckets = buckets
+            .get(user_id)
+            .unwrap_or(&vec![])
+            .to_owned()
+            .iter()
+            .map(|bucket| s3_core::Bucket {
+                name: bucket.name.clone(),
+                creation_date: bucket.created_at.to_string().clone(),
+            })
+            .collect();
         Ok(ListBucketsResponse {
             buckets: BucketContainer { buckets },
             owner: Owner {
@@ -66,15 +78,27 @@ impl crate::backend::Indexer for InMemoryBackend {
         let mut owner = self.owner_buckets.write().unwrap();
         if owner.contains_key(&user_id) {
             owner.get_mut(&user_id).unwrap().push(Bucket {
+                id: Uuid::new_v7(Timestamp::from_unix(
+                    uuid::NoContext,
+                    chrono::Utc::now().second().into(),
+                    0,
+                )),
                 name: bucket_name.to_string(),
-                creation_date: chrono::Utc::now().to_string(),
+                created_at: chrono::Utc::now(),
+                user_id: *user_id,
             });
         } else {
             owner.insert(
                 user_id.to_owned(),
                 vec![Bucket {
+                    id: Uuid::new_v7(Timestamp::from_unix(
+                        uuid::NoContext,
+                        chrono::Utc::now().second().into(),
+                        0,
+                    )),
                     name: bucket_name.to_string(),
-                    creation_date: chrono::Utc::now().to_string(),
+                    created_at: chrono::Utc::now(),
+                    user_id: *user_id,
                 }],
             );
         }

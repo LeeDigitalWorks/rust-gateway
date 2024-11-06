@@ -4,7 +4,7 @@ use axum::{
 };
 use s3_core::{response::ResponseData, S3Action, S3Error};
 
-use crate::authz::Key;
+use crate::{authz::Key, backend::types};
 #[async_trait]
 pub trait Filter: Send + Sync {
     async fn handle(&mut self, data: &mut S3Data) -> Result<(), S3Error>;
@@ -21,7 +21,7 @@ pub struct S3Data {
     pub auth_key: Key,
 
     // Bucket the request is for - backend bucket type
-    pub bucket: Option<String>,
+    pub bucket: Option<types::Bucket>,
 
     // Bucket Name the request is for
     pub bucket_name: String,

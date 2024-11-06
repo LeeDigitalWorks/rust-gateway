@@ -1,5 +1,4 @@
 use axum::response::IntoResponse;
-use bytes::Bytes;
 
 #[derive(Debug, Serialize)]
 pub enum S3Error {
@@ -148,10 +147,23 @@ fn s3error_to_error(error: &S3Error) -> Error {
 impl IntoResponse for S3Error {
     fn into_response(self) -> axum::response::Response<axum::body::Body> {
         let error = s3error_to_error(&self);
-        let bytes: Bytes = quick_xml::se::to_string(&error).unwrap().into();
+        let mut s = String::new();
+        let mut xml_writer = aws_smithy_xml::encode::XmlWriter::new(&mut s);
+        let error_tag = xml_writer.start_el("Error");
+        let mut inner_error_tag = error_tag.finish();
+        let code_tag = inner_error_tag.start_el("Code");
+        code_tag.finish().data(&error.code);
+        let message_tag = inner_error_tag.start_el("Message");
+        message_tag.finish().data(&error.message);
+        let resource_tag = inner_error_tag.start_el("Resource");
+        resource_tag.finish().data(&error.resource);
+        let request_id_tag = inner_error_tag.start_el("RequestId");
+        request_id_tag.finish().data(&error.request_id);
+        inner_error_tag.finish();
+
         axum::http::Response::builder()
             .status(error.status)
-            .body(axum::body::Body::from(bytes))
+            .body(axum::body::Body::from(s))
             .unwrap()
     }
 }
