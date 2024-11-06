@@ -19,4 +19,4 @@ md-5 = "0.10.6"
 base64 = "0.22.1"
 const-hex = "1.13.1"
 subtle = "2.6.1"
-uuid = { version = "1.11.0", features = ["fast-rng", "v4"] }
+uuid = { version = "1.11.0", features = ["fast-rng", "v4", "v7"] }

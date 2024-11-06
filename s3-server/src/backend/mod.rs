@@ -14,3 +14,5 @@ pub trait Indexer: Send + Sync {
 pub mod memory;
 pub use memory::InMemoryBackend;
 pub mod proxy;
+
+pub mod types;
