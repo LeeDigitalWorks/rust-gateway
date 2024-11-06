@@ -1,6 +1,7 @@
 mod authz;
 mod filter;
 mod limiter;
+mod handler;
 mod router;
 mod server;
 
@@ -17,5 +18,6 @@ async fn main() {
 
     let port = std::env::var("PORT").unwrap_or_else(|_| "3000".to_string());
     let addr = format!("0.0.0.0:{port}");
-    server::start_server(&addr, hosts, client).await.unwrap();
+    let server = server::Server::new(addr, hosts, client).await;
+    server.start().await.unwrap();
 }

@@ -12,20 +12,26 @@ use s3_iam::{google::protobuf::Timestamp, iampb};
 #[derive(Debug, Default)]
 pub struct S3IAMServer {
     // Map of usernames to Users
-    users: RwLock<HashMap<String, iampb::iam::User>>,
+    pub users: RwLock<HashMap<String, iampb::iam::User>>,
 
     // Map of access keys to Keys
-    keys: RwLock<HashMap<String, iampb::iam::Key>>,
+    pub keys: RwLock<HashMap<String, iampb::iam::Key>>,
 }
 
-pub async fn start_server(addr: &str) -> Result<(), Box<dyn std::error::Error>> {
+impl S3IAMServer {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+
+pub async fn start_server(
+    addr: &str,
+    server: S3IAMServer,
+) -> Result<(), Box<dyn std::error::Error>> {
     Server::builder()
-        .add_service(iampb::iam::iam_server::IamServer::new(
-            S3IAMServer::default(),
-        ))
+        .add_service(iampb::iam::iam_server::IamServer::new(server))
         .serve(addr.parse()?)
         .await?;
-
     Ok(())
 }
 
