@@ -1,14 +1,11 @@
 use std::collections::HashMap;
-use std::env;
 use std::io::Error;
 use std::sync::Arc;
 
-use axum::body::Bytes;
-use axum::extract::{FromRequest, Host, Path, Query, Request};
-use axum::http::HeaderMap;
+use axum::extract::Request;
 use axum::response::Response;
 use axum::routing::any;
-use axum::{extract::State, routing::get, Router};
+use axum::{extract::State, Router};
 use s3_backend::memory;
 use s3_core::S3Error;
 use s3_iam::iam::StreamKeysRequest;
@@ -18,9 +15,8 @@ use tokio::sync::RwLock;
 use crate::authz::Authz;
 use crate::filter::{
     run_filters, AuthenticationFilter, Filter, ParserFilter, RequestIdFilter, S3Data,
+    SecretKeyFilter,
 };
-
-const DEFAULT_S3_HOST: &str = "127.0.0.1:3000";
 
 pub struct AppState {
     pub backend: Arc<dyn s3_backend::Backend>,
@@ -40,6 +36,7 @@ pub async fn start_server(
         Box::new(RequestIdFilter::new()),
         Box::new(AuthenticationFilter::new(Authz::new(client))),
         Box::new(ParserFilter::new(hosts)),
+        Box::new(SecretKeyFilter::new()),
     ];
     let state = Arc::new(RwLock::new(AppState {
         backend,
@@ -87,8 +84,6 @@ async fn shutdown_signal() {
 }
 
 async fn handle_request(State(state): State<Arc<RwLock<AppState>>>, req: Request) -> Response {
-    let root_host = env::var("S3_HOST").unwrap_or_else(|_| DEFAULT_S3_HOST.to_string());
-
     let (parts, body) = req.into_parts();
     let body = match axum::body::to_bytes(body, usize::MAX).await {
         Ok(body) => body,
@@ -100,12 +95,29 @@ async fn handle_request(State(state): State<Arc<RwLock<AppState>>>, req: Request
 
     let mut data = S3Data::new();
     data.req = request;
-    let mut filters = &mut state.write().await.filters;
-    let response = run_filters(&mut filters, &mut data).await;
-
+    let mut write_only = state.write().await;
+    let filters = &mut write_only.filters;
+    let response = run_filters(filters, &mut data).await;
     if let Err(error) = response {
         return axum::response::IntoResponse::into_response(error);
     }
+    drop(write_only);
 
-    axum::response::IntoResponse::into_response("".to_string())
+    // TODO: Route to the correct handler
+    match data.action {
+        s3_core::S3Action::ListBuckets => {
+            let response = state.read().await.backend.list_buckets().await;
+            match response {
+                Ok(response) => {
+                    return axum::response::IntoResponse::into_response(response.into_response());
+                }
+                Err(error) => {
+                    return axum::response::IntoResponse::into_response(error);
+                }
+            }
+        }
+        _ => {
+            return axum::response::IntoResponse::into_response(S3Error::NotImplemented);
+        }
+    }
 }

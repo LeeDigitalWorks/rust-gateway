@@ -9,25 +9,23 @@ pub struct ProxyBackend {}
 
 #[async_trait]
 impl crate::Backend for ProxyBackend {
+    async fn put_object(&self, _bucket_name: &str, _key: &str, _data: Vec<u8>) -> Result<(), S3Error> {
+        Err(S3Error::NotImplemented)
+    }
+
     async fn get_object(&self, _bucket_name: &str, _key: &str) -> Result<Vec<u8>, S3Error> {
-        Ok(vec![])
+        Err(S3Error::NotImplemented)
     }
 
     async fn list_buckets(&self) -> Result<ListBucketsResponse, S3Error> {
-        Ok(ListBucketsResponse {
-            buckets: BucketContainer { buckets: vec![] },
-            owner: Owner {
-                id: "".to_string(),
-                display_name: "".to_string(),
-            },
-        })
+        Err(S3Error::NotImplemented)
     }
 
     async fn create_bucket(&self, _bucket_name: &str) -> Result<(), S3Error> {
-        Ok(())
+        Err(S3Error::NotImplemented)
     }
 
     async fn delete_bucket(&self, _bucket_name: &str) -> Result<(), S3Error> {
-        Ok(())
+        Err(S3Error::NotImplemented)
     }
 }

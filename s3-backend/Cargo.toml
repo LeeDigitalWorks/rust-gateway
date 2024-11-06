@@ -8,3 +8,4 @@ async-trait = { workspace = true }
 chrono = { workspace = true }
 thiserror = { workspace = true }
 s3-core = { path = "../s3-core" }
+tracing = "0.1.40"

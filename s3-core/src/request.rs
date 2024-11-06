@@ -12,7 +12,7 @@
 // - OptionsPreflight
 // - PostObject
 #[derive(Default, Debug, Clone, PartialEq)]
-pub enum S3Request {
+pub enum S3Action {
     #[default]
     Unknown,
     AbortMultipartUpload,

@@ -20,7 +20,7 @@ impl ParserFilter {
 #[async_trait]
 impl Filter for ParserFilter {
     async fn handle(&mut self, data: &mut S3Data) -> Result<(), S3Error> {
-        data.operation = self.router.match_result(&data.req);
+        data.action = self.router.match_result(&data.req);
         Ok(())
     }
 }
