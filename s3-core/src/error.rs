@@ -7,6 +7,7 @@ pub enum S3Error {
     AuthorizationHeaderMalformed,
     BucketAlreadyExists(String),
     BucketNotEmpty,
+    KeyTooLong(String),
     InvalidArgument,
     InvalidBucketName,
     InvalidAccessKeyId,
@@ -125,6 +126,13 @@ fn s3error_to_error(error: &S3Error) -> Error {
             code: "NotImplemented".to_string(),
             message: "A header you provided implies functionality that is not implemented.".to_string(),
             resource: "".to_string(),
+            request_id: "".to_string(),
+        },
+        S3Error::KeyTooLong(key) => Error {
+            status: http::StatusCode::BAD_REQUEST.into(),
+            code: "KeyTooLong".to_string(),
+            message: "Your key is too long.".to_string(),
+            resource: key.to_string(),
             request_id: "".to_string(),
         },
         _ => Error {

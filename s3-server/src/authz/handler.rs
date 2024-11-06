@@ -54,7 +54,7 @@ impl Authz {
         match get_auth_type(req) {
             AuthType::SignedV4 => match self.check_signature_header_match_v4(req).await {
                 Ok(key) => Ok(key),
-                Err(_) => Err(S3Error::SignatureDoesNotMatch),
+                Err(e) => Err(e),
             },
             _ => Err(S3Error::NotImplemented),
         }
@@ -67,7 +67,10 @@ impl Authz {
                 access_key: access_key.to_string(),
             })
             .await;
-        if let Err(_) = key {
+        if let Err(e) = key {
+            if e.code() == tonic::Code::NotFound {
+                return Err(S3Error::InvalidAccessKeyId);
+            }
             return Err(S3Error::InternalError);
         }
 

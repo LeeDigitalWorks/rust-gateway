@@ -12,20 +12,32 @@ use s3_iam::{google::protobuf::Timestamp, iampb};
 #[derive(Debug, Default)]
 pub struct S3IAMServer {
     // Map of usernames to Users
-    users: RwLock<HashMap<String, iampb::iam::User>>,
+    pub users: RwLock<HashMap<String, iampb::iam::User>>,
 
     // Map of access keys to Keys
-    keys: RwLock<HashMap<String, iampb::iam::Key>>,
+    pub keys: RwLock<HashMap<String, iampb::iam::Key>>,
 }
 
-pub async fn start_server(addr: &str) -> Result<(), Box<dyn std::error::Error>> {
+impl S3IAMServer {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn with_keys(keys: HashMap<String, iampb::iam::Key>) -> Self {
+        let mut server = Self::new();
+        server.keys = RwLock::new(keys);
+        server
+    }
+}
+
+pub async fn start_server(
+    addr: &str,
+    server: S3IAMServer,
+) -> Result<(), Box<dyn std::error::Error>> {
     Server::builder()
-        .add_service(iampb::iam::iam_server::IamServer::new(
-            S3IAMServer::default(),
-        ))
+        .add_service(iampb::iam::iam_server::IamServer::new(server))
         .serve(addr.parse()?)
         .await?;
-
     Ok(())
 }
 
@@ -59,6 +71,7 @@ impl iampb::iam::iam_server::Iam for S3IAMServer {
         &self,
         request: tonic::Request<iampb::iam::GetKeyRequest>,
     ) -> Result<tonic::Response<iampb::iam::GetKeyResponse>, tonic::Status> {
+        tracing::debug!("GetKey: {:?}", request);
         let request = request.into_inner();
         let keys = self.keys.read().await;
         let key = keys.get(&request.access_key).cloned();

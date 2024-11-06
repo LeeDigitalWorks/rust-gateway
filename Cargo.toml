@@ -1,7 +1,6 @@
 [workspace]
 members = [
     "s3-core",
-    "s3-backend",
     "s3-server", 
     "s3-iam",
 ]
@@ -13,6 +12,7 @@ lto = true
 
 [workspace.dependencies]
 async-trait = "0.1.83"
+aws-sdk-s3 = "1.59.0"
 axum = { version = "0.7.7", features = ["multipart"] }
 chrono = "0.4.38"
 prost = "0.13.3"

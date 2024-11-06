@@ -3,6 +3,13 @@ use std::collections::{BTreeMap, HashMap};
 use axum::{body::Bytes, http::Request};
 use s3_core::S3Action;
 
+pub struct Result {
+    pub action: S3Action,
+    pub bucket: String,
+    pub key: String,
+    pub host: String,
+}
+
 pub struct Router {
     hosts: Vec<String>,
     route_matcher: RouteMatcher,
@@ -16,7 +23,7 @@ impl Router {
         }
     }
 
-    pub fn match_result(&self, req: &axum::http::Request<axum::body::Bytes>) -> S3Action {
+    pub fn match_result(&self, req: &axum::http::Request<axum::body::Bytes>) -> Result {
         let req_host = req.uri().host().unwrap_or("").to_string();
 
         for host in &self.hosts {
@@ -40,7 +47,13 @@ impl Router {
                 return self.match_route(host, bucket, key, req);
             }
         }
-        S3Action::Unknown
+
+        Result {
+            action: S3Action::Unknown,
+            bucket: "".to_string(),
+            key: "".to_string(),
+            host: "".to_string(),
+        }
     }
 
     fn match_route(
@@ -49,7 +62,7 @@ impl Router {
         bucket: &str,
         key: &str,
         req: &axum::http::Request<axum::body::Bytes>,
-    ) -> S3Action {
+    ) -> Result {
         let method = req.method().as_str();
         let mut matcher = &self.route_matcher.key;
         if key == "" {
@@ -62,12 +75,22 @@ impl Router {
         if let Some(routes) = matcher.get(method) {
             for route in routes {
                 if route.match_route(req) {
-                    return route.operation.clone();
+                    return Result {
+                        action: route.operation.clone(),
+                        bucket: bucket.to_string(),
+                        key: key.to_string(),
+                        host: host.to_string(),
+                    };
                 }
             }
         }
 
-        S3Action::Unknown
+        Result {
+            action: S3Action::Unknown,
+            bucket: bucket.to_string(),
+            key: key.to_string(),
+            host: host.to_string(),
+        }
     }
 }
 
