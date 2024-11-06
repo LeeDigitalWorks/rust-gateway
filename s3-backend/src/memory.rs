@@ -24,14 +24,24 @@ impl InMemoryBackend {
 
 #[async_trait]
 impl crate::Backend for InMemoryBackend {
+    async fn put_object(&self, bucket_name: &str, key: &str, data: Vec<u8>) -> Result<(), S3Error> {
+        let mut buckets = self.buckets.write().unwrap();
+        if let Some(bucket) = buckets.get_mut(bucket_name) {
+            bucket.insert(key.to_string(), data);
+            return Ok(());
+        }
+        Err(S3Error::NoSuchBucket(bucket_name.to_string()))
+    }
+
     async fn get_object(&self, bucket_name: &str, key: &str) -> Result<Vec<u8>, S3Error> {
         let buckets = self.buckets.read().unwrap();
         if let Some(bucket) = buckets.get(bucket_name) {
             if let Some(object) = bucket.get(key) {
                 return Ok(object.clone());
             }
+            return Err(S3Error::NoSuchKey(key.to_string()));
         }
-        Err(S3Error::NoSuchKey(key.to_string()))
+        Err(S3Error::NoSuchBucket(bucket_name.to_string()))
     }
 
     async fn list_buckets(&self) -> Result<ListBucketsResponse, S3Error> {

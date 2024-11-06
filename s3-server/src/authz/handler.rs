@@ -50,10 +50,10 @@ impl Authz {
         Self { client }
     }
 
-    pub async fn check(&mut self, req: &Request<axum::body::Bytes>) -> Result<(), S3Error> {
+    pub async fn check(&mut self, req: &Request<axum::body::Bytes>) -> Result<Key, S3Error> {
         match get_auth_type(req) {
-            AuthType::SignedV4 => match self.does_signature_header_match_v4(req).await {
-                Ok(_) => Ok(()),
+            AuthType::SignedV4 => match self.check_signature_header_match_v4(req).await {
+                Ok(key) => Ok(key),
                 Err(_) => Err(S3Error::SignatureDoesNotMatch),
             },
             _ => Err(S3Error::NotImplemented),
@@ -83,10 +83,10 @@ impl Authz {
         }
     }
 
-    pub async fn does_signature_header_match_v4(
+    pub async fn check_signature_header_match_v4(
         &mut self,
         req: &Request<axum::body::Bytes>,
-    ) -> Result<(), s3_core::S3Error> {
+    ) -> Result<Key, s3_core::S3Error> {
         let auth_string = req
             .headers()
             .get("Authorization")
@@ -128,6 +128,6 @@ impl Authz {
             return Err(s3_core::S3Error::SignatureDoesNotMatch);
         }
 
-        Ok(())
+        Ok(key)
     }
 }

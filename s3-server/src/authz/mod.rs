@@ -5,6 +5,7 @@ mod v4;
 mod v4_parser;
 mod v4_utils;
 
+#[derive(Debug)]
 pub struct Key {
     pub access_key: String,
     pub secret_key: String,

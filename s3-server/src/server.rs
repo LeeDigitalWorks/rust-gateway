@@ -15,6 +15,7 @@ use tokio::sync::RwLock;
 use crate::authz::Authz;
 use crate::filter::{
     run_filters, AuthenticationFilter, Filter, ParserFilter, RequestIdFilter, S3Data,
+    SecretKeyFilter,
 };
 
 pub struct AppState {
@@ -35,6 +36,7 @@ pub async fn start_server(
         Box::new(RequestIdFilter::new()),
         Box::new(AuthenticationFilter::new(Authz::new(client))),
         Box::new(ParserFilter::new(hosts)),
+        Box::new(SecretKeyFilter::new()),
     ];
     let state = Arc::new(RwLock::new(AppState {
         backend,
@@ -93,14 +95,27 @@ async fn handle_request(State(state): State<Arc<RwLock<AppState>>>, req: Request
 
     let mut data = S3Data::new();
     data.req = request;
-    let mut filters = &mut state.write().await.filters;
-    let response = run_filters(&mut filters, &mut data).await;
+    let mut write_only = state.write().await;
+    let filters = &mut write_only.filters;
+    let response = run_filters(filters, &mut data).await;
     if let Err(error) = response {
         return axum::response::IntoResponse::into_response(error);
     }
+    drop(write_only);
 
     // TODO: Route to the correct handler
     match data.action {
+        s3_core::S3Action::ListBuckets => {
+            let response = state.read().await.backend.list_buckets().await;
+            match response {
+                Ok(response) => {
+                    return axum::response::IntoResponse::into_response(response.into_response());
+                }
+                Err(error) => {
+                    return axum::response::IntoResponse::into_response(error);
+                }
+            }
+        }
         _ => {
             return axum::response::IntoResponse::into_response(S3Error::NotImplemented);
         }

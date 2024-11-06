@@ -2,7 +2,9 @@ use axum::{
     async_trait,
     body::{Body, Bytes},
 };
-use s3_core::{response::ResponseData, S3Error, S3Action};
+use s3_core::{response::ResponseData, S3Action, S3Error};
+
+use crate::authz::Key;
 
 #[async_trait]
 pub trait Filter: Send + Sync {
@@ -17,8 +19,7 @@ pub struct S3Data {
     // Request ID
     pub request_id: String,
 
-    pub access_key: String,
-    pub secret_key: String,
+    pub auth_key: Key,
 
     // Bucket the request is for
     pub bucket: Option<String>,
@@ -41,8 +42,11 @@ impl S3Data {
             req: axum::http::Request::new(Bytes::new()),
             res: ResponseData::new(),
             request_id: "".to_string(),
-            access_key: "".to_string(),
-            secret_key: "".to_string(),
+            auth_key: Key {
+                access_key: "".to_string(),
+                secret_key: "".to_string(),
+                user_id: 0,
+            },
             bucket: None,
             bucket_name: "".to_string(),
             key: "".to_string(),
