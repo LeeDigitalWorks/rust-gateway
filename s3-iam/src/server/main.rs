@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 mod server;
 
 #[tokio::main]
@@ -12,16 +14,20 @@ async fn main() {
     tracing::info!("Environment: {}", env);
 
     if env == "development" {
-        let server = server::S3IAMServer::new();
-        server.keys.write().await.insert(
-            "1".to_string(),
+        let mut keys = HashMap::new();
+
+        keys.insert(
+            "RGTEST".to_string(),
             s3_iam::iam::Key {
                 name: "TestKey".to_string(),
+                user_id: 1,
                 access_key: "RGTEST".to_string(),
                 secret_key: "RGSECRET".to_string(),
                 ..Default::default()
             },
         );
+
+        let server = server::S3IAMServer::with_keys(keys);
         server::start_server(&addr, server).await.unwrap();
     } else {
         let server = server::S3IAMServer::new();

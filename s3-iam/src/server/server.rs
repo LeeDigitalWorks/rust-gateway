@@ -22,6 +22,12 @@ impl S3IAMServer {
     pub fn new() -> Self {
         Self::default()
     }
+
+    pub fn with_keys(keys: HashMap<String, iampb::iam::Key>) -> Self {
+        let mut server = Self::new();
+        server.keys = RwLock::new(keys);
+        server
+    }
 }
 
 pub async fn start_server(
@@ -65,6 +71,7 @@ impl iampb::iam::iam_server::Iam for S3IAMServer {
         &self,
         request: tonic::Request<iampb::iam::GetKeyRequest>,
     ) -> Result<tonic::Response<iampb::iam::GetKeyResponse>, tonic::Status> {
+        tracing::debug!("GetKey: {:?}", request);
         let request = request.into_inner();
         let keys = self.keys.read().await;
         let key = keys.get(&request.access_key).cloned();

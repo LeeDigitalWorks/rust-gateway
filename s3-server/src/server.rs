@@ -6,7 +6,6 @@ use axum::extract::Request;
 use axum::response::Response;
 use axum::routing::any;
 use axum::{extract::State, Router};
-use s3_backend::memory;
 use s3_core::S3Error;
 use s3_iam::iam::StreamKeysRequest;
 use tokio::signal::unix::{signal, SignalKind};
@@ -30,7 +29,7 @@ impl Server {
         hosts: Vec<String>,
         client: s3_iam::iam::iam_client::IamClient<tonic::transport::Channel>,
     ) -> Self {
-        let backend = Arc::new(memory::InMemoryBackend::new());
+        let backend = Arc::new(crate::backend::InMemoryBackend::new());
         let keys = Arc::new(Self::refresh_keys(client.clone()).await);
 
         let filters: Vec<Box<dyn Filter>> = vec![
@@ -107,13 +106,13 @@ impl Server {
         // TODO: Route to the correct handler
         match data.action {
             s3_core::S3Action::ListBuckets => {
-                return Self::list_buckets(&state).await;
+                return Self::list_buckets(&state, data).await;
             }
             s3_core::S3Action::CreateBucket => {
-                return Self::create_bucket(&state, data.bucket_name).await;
+                return Self::create_bucket(&state, data).await;
             }
             s3_core::S3Action::DeleteBucket => {
-                return Self::delete_bucket(&state, data.bucket_name).await;
+                return Self::delete_bucket(&state, data).await;
             }
             _ => {
                 return axum::response::IntoResponse::into_response(S3Error::NotImplemented);
@@ -123,7 +122,7 @@ impl Server {
 }
 
 pub struct AppState {
-    pub backend: Arc<dyn s3_backend::Backend>,
+    pub backend: Arc<dyn crate::backend::Indexer>,
     pub keys: Arc<HashMap<String, s3_iam::iampb::iam::Key>>,
     pub filters: Vec<Box<dyn Filter>>,
 }

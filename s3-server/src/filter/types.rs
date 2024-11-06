@@ -20,7 +20,7 @@ pub struct S3Data {
 
     pub auth_key: Key,
 
-    // Bucket the request is for
+    // Bucket the request is for - backend bucket type
     pub bucket: Option<String>,
 
     // Bucket Name the request is for
