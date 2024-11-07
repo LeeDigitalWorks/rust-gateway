@@ -4,6 +4,7 @@ pub struct Bucket {
     pub name: String,
     pub user_id: u64,
     pub created_at: chrono::DateTime<chrono::Utc>,
+    
 }
 
 #[derive(Debug, Default)]

@@ -6,6 +6,7 @@ pub mod request;
 pub mod response;
 pub mod types;
 pub mod util;
+pub mod versioning;
 
 pub use error::S3Error;
 pub use request::S3Action;
