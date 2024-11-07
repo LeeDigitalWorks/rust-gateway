@@ -11,7 +11,7 @@ use s3_iam::iam::StreamKeysRequest;
 use tokio::signal::unix::{signal, SignalKind};
 use tokio::sync::RwLock;
 
-use crate::authz::Authz;
+use crate::authz::{Authz, Key};
 use crate::filter::{
     run_filters, AuthenticationFilter, Filter, ParserFilter, RequestIdFilter, S3Data,
     SecretKeyFilter,
@@ -30,11 +30,14 @@ impl Server {
         client: s3_iam::iam::iam_client::IamClient<tonic::transport::Channel>,
     ) -> Self {
         let backend = Arc::new(crate::backend::InMemoryBackend::new());
-        let keys = Arc::new(Self::refresh_keys(client.clone()).await);
+        let keys = Arc::new(RwLock::new(HashMap::new()));
+
+        // Refresh keys
+        tokio::spawn(Self::refresh_keys(client.clone(), keys.clone()));
 
         let filters: Vec<Box<dyn Filter>> = vec![
             Box::new(RequestIdFilter::new()),
-            Box::new(AuthenticationFilter::new(Authz::new(client))),
+            Box::new(AuthenticationFilter::new(Authz::new(keys.clone()))),
             Box::new(ParserFilter::new(hosts)),
             Box::new(SecretKeyFilter::new()),
         ];
@@ -70,17 +73,31 @@ impl Server {
 
     async fn refresh_keys(
         mut client: s3_iam::iam::iam_client::IamClient<tonic::transport::Channel>,
-    ) -> HashMap<String, s3_iam::iampb::iam::Key> {
-        let request = tonic::Request::new(StreamKeysRequest::default());
-        let mut stream = client.stream_keys(request).await.unwrap().into_inner();
-        let mut keys = HashMap::new();
-        while let Some(resp) = stream.message().await.unwrap() {
-            if let Some(key) = resp.key {
-                keys.insert(key.access_key.clone(), key);
+        keys: Arc<RwLock<HashMap<String, Key>>>,
+    ) {
+        loop {
+            let request = tonic::Request::new(StreamKeysRequest::default());
+            let mut stream = client.stream_keys(request).await.unwrap().into_inner();
+            let mut new_keys = HashMap::new();
+            while let Some(resp) = stream.message().await.unwrap() {
+                if let Some(key) = resp.key {
+                    new_keys.insert(
+                        key.access_key.clone(),
+                        Key {
+                            access_key: key.access_key,
+                            secret_key: key.secret_key,
+                            user_id: key.user_id,
+                        },
+                    );
+                }
             }
+            tracing::debug!(keys = ?new_keys, "Refreshed keys");
+            let mut write_only = keys.write().await;
+            *write_only = new_keys;
+            drop(write_only);
+
+            tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
         }
-        tracing::debug!(keys = ?keys, "Refreshed keys");
-        keys
     }
 
     async fn handle_request(State(state): State<Arc<RwLock<AppState>>>, req: Request) -> Response {
@@ -123,7 +140,7 @@ impl Server {
 
 pub struct AppState {
     pub backend: Arc<dyn crate::backend::Indexer>,
-    pub keys: Arc<HashMap<String, s3_iam::iampb::iam::Key>>,
+    pub keys: Arc<RwLock<HashMap<String, Key>>>,
     pub filters: Vec<Box<dyn Filter>>,
 }
 

@@ -1,6 +1,9 @@
+use std::{collections::HashMap, sync::Arc};
+
 use axum::extract::Request;
 use s3_core::S3Error;
 use s3_iam::iam::GetKeyRequest;
+use tokio::sync::RwLock;
 
 use super::{
     v4::{
@@ -42,12 +45,12 @@ fn get_auth_type(req: &Request<axum::body::Bytes>) -> AuthType {
 }
 
 pub struct Authz {
-    pub client: s3_iam::iam::iam_client::IamClient<tonic::transport::Channel>,
+    pub keys: Arc<RwLock<HashMap<String, Key>>>,
 }
 
 impl Authz {
-    pub fn new(client: s3_iam::iam::iam_client::IamClient<tonic::transport::Channel>) -> Self {
-        Self { client }
+    pub fn new(keys: Arc<RwLock<HashMap<String, Key>>>) -> Self {
+        Self { keys }
     }
 
     pub async fn check(&mut self, req: &Request<axum::body::Bytes>) -> Result<Key, S3Error> {
@@ -61,29 +64,11 @@ impl Authz {
     }
 
     pub async fn get_key(&mut self, access_key: &str) -> Result<Key, S3Error> {
-        let key = self
-            .client
-            .get_key(GetKeyRequest {
-                access_key: access_key.to_string(),
-            })
-            .await;
-        if let Err(e) = key {
-            if e.code() == tonic::Code::NotFound {
-                return Err(S3Error::InvalidAccessKeyId);
-            }
-            return Err(S3Error::InternalError);
+        let cache = self.keys.read().await;
+        if let Some(key) = cache.get(access_key) {
+            return Ok(key.clone());
         }
-
-        let key = key.unwrap().into_inner().key;
-        if let Some(key) = key {
-            Ok(Key {
-                access_key: key.access_key,
-                secret_key: key.secret_key,
-                user_id: key.user_id,
-            })
-        } else {
-            Err(S3Error::InvalidAccessKeyId)
-        }
+        Err(S3Error::InvalidAccessKeyId)
     }
 
     pub async fn check_signature_header_match_v4(
