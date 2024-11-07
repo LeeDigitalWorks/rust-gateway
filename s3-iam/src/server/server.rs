@@ -97,7 +97,7 @@ impl iampb::iam::iam_server::Iam for S3IAMServer {
         request: tonic::Request<iampb::iam::CreateUserRequest>,
     ) -> Result<tonic::Response<iampb::iam::CreateUserResponse>, tonic::Status> {
         let request = request.into_inner();
-        let id = thread_rng().gen::<u64>();
+        let id = thread_rng().gen::<i64>();
         let user = iampb::iam::User {
             id,
             name: request.name,

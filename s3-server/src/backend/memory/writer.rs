@@ -9,7 +9,7 @@ use super::super::types::Bucket;
 
 #[async_trait]
 impl crate::backend::IndexWriter for crate::backend::memory::InMemoryBackend {
-    async fn create_bucket(&self, bucket_name: &str, user_id: &u64) -> Result<(), S3Error> {
+    async fn create_bucket(&self, bucket_name: &str, user_id: &i64) -> Result<(), S3Error> {
         let mut buckets = self.buckets.write().unwrap();
         if buckets.contains_key(bucket_name) {
             return Err(S3Error::BucketAlreadyExists(bucket_name.to_string()));
@@ -45,7 +45,7 @@ impl crate::backend::IndexWriter for crate::backend::memory::InMemoryBackend {
         Ok(())
     }
 
-    async fn delete_bucket(&self, bucket_name: &str, user_id: &u64) -> Result<(), S3Error> {
+    async fn delete_bucket(&self, bucket_name: &str, user_id: &i64) -> Result<(), S3Error> {
         let mut owner = self.owner_buckets.write().unwrap();
         if let Some(buckets) = owner.get_mut(&user_id) {
             if let Some(index) = buckets.iter().position(|bucket| bucket.name == bucket_name) {

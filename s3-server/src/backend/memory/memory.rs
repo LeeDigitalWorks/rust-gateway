@@ -14,7 +14,7 @@ pub struct InMemoryBackend {
     // The key is the bucket name, and the value is a map of object keys to object data.
     pub buckets: RwLock<HashMap<String, HashMap<String, Vec<u8>>>>,
     // The key is the owner ID and the value is a list of bucket names.
-    pub owner_buckets: RwLock<HashMap<u64, Vec<Bucket>>>,
+    pub owner_buckets: RwLock<HashMap<i64, Vec<Bucket>>>,
 }
 
 impl InMemoryBackend {

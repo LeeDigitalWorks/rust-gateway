@@ -1,10 +1,16 @@
 CREATE TABLE IF NOT EXISTS buckets (
     id UUID PRIMARY KEY,
     name VARCHAR(63) NOT NULL,
-    user_id VARCHAR(255) NOT NULL,
+    user_id BIGINT NOT NULL,
     account_id TEXT NOT NULL,
     versioning SMALLINT NOT NULL DEFAULT 0,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    mode INT DEFAULT NULL,
+    storageprofile JSONB DEFAULT NULL,
+    acl JSONB DEFAULT NULL,
+    cors JSONB DEFAULT NULL,
+    lifecycle JSONB DEFAULT NULL,
+    policy JSONB DEFAULT NULL
 );
 CREATE UNIQUE INDEX IF NOT EXISTS buckets_name_key ON buckets (name);
 
@@ -28,6 +34,7 @@ CREATE TABLE IF NOT EXISTS objects (
     owner_display_name TEXT NOT NULL,
     owner_display_name_normalized TEXT NOT NULL,
     owner_type TEXT NOT NULL,
-    acl JSONB,
+    acl JSONB DEFAULT NULL,
+    policy JSONB DEFAULT NULL,
     etag TEXT NOT NULL
 );

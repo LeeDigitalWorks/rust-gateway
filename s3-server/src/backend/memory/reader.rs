@@ -12,7 +12,7 @@ use super::super::types::Bucket;
 
 #[async_trait]
 impl crate::backend::IndexReader for crate::backend::memory::InMemoryBackend {
-    async fn list_buckets(&self, user_id: &u64) -> Result<ListBucketsResponse, S3Error> {
+    async fn list_buckets(&self, user_id: &i64) -> Result<ListBucketsResponse, S3Error> {
         let buckets = self.owner_buckets.read().unwrap();
         let buckets = buckets
             .get(user_id)

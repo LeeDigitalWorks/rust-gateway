@@ -9,5 +9,5 @@ mod v4_utils;
 pub struct Key {
     pub access_key: String,
     pub secret_key: String,
-    pub user_id: u64,
+    pub user_id: i64,
 }
