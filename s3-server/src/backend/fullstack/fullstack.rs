@@ -4,8 +4,13 @@ use s3_core::{
     types::{BucketContainer, Owner},
     S3Error,
 };
+use uuid::{timestamp::context, Timestamp, Uuid};
 
-use crate::backend::{db::Database, ProxyBackend};
+use crate::backend::{
+    db::{Database, DatabaseStore},
+    types::Bucket,
+    ProxyBackend,
+};
 
 pub struct FullstackBackend {
     postgres: Database,
@@ -24,7 +29,26 @@ impl crate::backend::Indexer for FullstackBackend {}
 #[async_trait]
 impl crate::backend::IndexReader for FullstackBackend {
     async fn list_buckets(&self, user_id: &i64) -> Result<ListBucketsResponse, S3Error> {
-        Err(S3Error::NotImplemented)
+        let buckets = self
+            .postgres
+            .list_buckets(user_id)
+            .await
+            .map_err(|_| S3Error::InternalError)?;
+        Ok(ListBucketsResponse {
+            buckets: BucketContainer {
+                buckets: buckets
+                    .iter()
+                    .map(|bucket| s3_core::Bucket {
+                        name: bucket.name.clone(),
+                        creation_date: bucket.created_at.to_string(),
+                    })
+                    .collect(),
+            },
+            owner: Owner {
+                id: user_id.to_string(),
+                display_name: user_id.to_string(),
+            },
+        })
     }
 
     async fn get_object(&self, bucket_name: &str, key: &str) -> Result<Vec<u8>, S3Error> {
@@ -52,11 +76,30 @@ impl crate::backend::IndexReader for FullstackBackend {
 #[async_trait]
 impl crate::backend::IndexWriter for FullstackBackend {
     async fn create_bucket(&self, bucket_name: &str, user_id: &i64) -> Result<(), S3Error> {
-        Err(S3Error::NotImplemented)
+        // Call proxy backend to create bucket
+        self.proxy.create_bucket(bucket_name, user_id).await?;
+        // Call database backend to create bucket
+        self.postgres
+            .create_bucket(Bucket {
+                id: Uuid::new_v7(Timestamp::now(context::NoContext)),
+                name: bucket_name.to_string(),
+                user_id: *user_id,
+                created_at: chrono::Utc::now(),
+            })
+            .await
+            .map_err(|_| S3Error::InternalError)?;
+        Ok(())
     }
 
     async fn delete_bucket(&self, bucket_name: &str, user_id: &i64) -> Result<(), S3Error> {
-        Err(S3Error::NotImplemented)
+        // Delete bucket from proxy backend
+        self.proxy.delete_bucket(bucket_name, user_id).await?;
+        // Delete bucket from database backend
+        self.postgres
+            .delete_bucket(bucket_name, user_id)
+            .await
+            .map_err(|_| S3Error::InternalError)?;
+        Ok(())
     }
 
     async fn put_object(&self, bucket_name: &str, key: &str, data: Vec<u8>) -> Result<(), S3Error> {

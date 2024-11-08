@@ -1,6 +1,13 @@
-use sqlx::Row;
+use axum::async_trait;
 
 use crate::backend::types;
+
+#[async_trait]
+pub trait DatabaseStore {
+    async fn create_bucket(&self, bucket: types::Bucket) -> Result<(), sqlx::Error>;
+    async fn list_buckets(&self, user_id: &i64) -> Result<Vec<types::Bucket>, sqlx::Error>;
+    async fn delete_bucket(&self, bucket_name: &str, user_id: &i64) -> Result<(), sqlx::Error>;
+}
 
 pub struct Database {
     pool: sqlx::PgPool,
@@ -10,8 +17,11 @@ impl Database {
     pub fn new(pool: sqlx::PgPool) -> Result<Self, sqlx::Error> {
         Ok(Self { pool })
     }
+}
 
-    pub async fn create_bucket(&self, bucket: types::Bucket) -> Result<(), sqlx::Error> {
+#[async_trait]
+impl DatabaseStore for Database {
+    async fn create_bucket(&self, bucket: types::Bucket) -> Result<(), sqlx::Error> {
         sqlx::query_as!(
             types::Bucket,
             r#"
@@ -27,7 +37,7 @@ impl Database {
         Ok(())
     }
 
-    pub async fn list_buckets(&self, user_id: &i64) -> Result<Vec<types::Bucket>, sqlx::Error> {
+    async fn list_buckets(&self, user_id: &i64) -> Result<Vec<types::Bucket>, sqlx::Error> {
         sqlx::query_as!(
             types::Bucket,
             r#"
@@ -39,5 +49,19 @@ impl Database {
         )
         .fetch_all(&self.pool)
         .await
+    }
+
+    async fn delete_bucket(&self, bucket_name: &str, user_id: &i64) -> Result<(), sqlx::Error> {
+        sqlx::query!(
+            r#"
+            DELETE FROM buckets
+            WHERE name = $1 AND user_id = $2
+            "#,
+            bucket_name,
+            user_id
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(())
     }
 }
