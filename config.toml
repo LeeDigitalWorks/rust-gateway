@@ -4,7 +4,7 @@ log_path = "/var/log/rust-gateway/rust-gateway.log"
 access_log_path = "/var/log/rust-gateway/access.log"
 access_log_format = "{combined}"
 panic_log_path = "/var/log/rust-gateway/panic.log"
-log_level = "info"
+log_level = "debug"
 pid_file = "/var/run/rust-gateway/rust-gateway.pid"
 bind_api_address = "127.0.0.1:3000"
 bind_admin_address = "0.0.0.0:9000"
@@ -53,4 +53,3 @@ download_buf_pool_size = 8388608 #8MB
 upload_min_chunk_size = 524288 #512KB
 upload_max_chunk_size = 8388608 #8MB
 
-# S3Map Config

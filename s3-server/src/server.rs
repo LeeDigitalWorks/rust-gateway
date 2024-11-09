@@ -10,6 +10,7 @@ use s3_core::S3Error;
 use s3_iam::iam::StreamKeysRequest;
 use tokio::signal::unix::{signal, SignalKind};
 use tokio::sync::RwLock;
+use sync_wrapper::SyncStream;
 
 use crate::authz::{Authz, Key};
 use crate::filter::{
@@ -106,17 +107,9 @@ impl Server {
     }
 
     async fn handle_request(State(state): State<Arc<RwLock<AppState>>>, req: Request) -> Response {
-        let (parts, body) = req.into_parts();
-        let body = match axum::body::to_bytes(body, usize::MAX).await {
-            Ok(body) => body,
-            Err(_) => {
-                return axum::response::IntoResponse::into_response(S3Error::InvalidRequest);
-            }
-        };
-        let request = Request::<axum::body::Bytes>::from_parts(parts, body);
-
+        let req = req.map(|body| reqwest::Body::wrap_stream(SyncStream::new(body.into_data_stream())));
         let mut data = S3Data::new();
-        data.req = request;
+        data.req = req;
         let mut write_only = state.write().await;
         let filters = &mut write_only.filters;
         let response = run_filters(filters, &mut data).await;

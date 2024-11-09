@@ -24,7 +24,7 @@ enum AuthType {
     Signedv2,
 }
 
-fn is_signature(req: &Request<axum::body::Bytes>) -> (bool, AuthType) {
+fn is_signature(req: &Request<reqwest::Body>) -> (bool, AuthType) {
     let auth_header = req.headers().get("Authorization");
     if let Some(auth_header) = auth_header {
         let auth_header = auth_header.to_str().unwrap();
@@ -36,7 +36,7 @@ fn is_signature(req: &Request<axum::body::Bytes>) -> (bool, AuthType) {
     (false, AuthType::Unknown)
 }
 
-fn get_auth_type(req: &Request<axum::body::Bytes>) -> AuthType {
+fn get_auth_type(req: &Request<reqwest::Body>) -> AuthType {
     if let (true, auth_type) = is_signature(req) {
         return auth_type;
     }
@@ -53,7 +53,7 @@ impl Authz {
         Self { keys }
     }
 
-    pub async fn check(&mut self, req: &Request<axum::body::Bytes>) -> Result<Key, S3Error> {
+    pub async fn check(&mut self, req: &Request<reqwest::Body>) -> Result<Key, S3Error> {
         match get_auth_type(req) {
             AuthType::SignedV4 => match self.check_signature_header_match_v4(req).await {
                 Ok(key) => Ok(key),
@@ -73,7 +73,7 @@ impl Authz {
 
     pub async fn check_signature_header_match_v4(
         &mut self,
-        req: &Request<axum::body::Bytes>,
+        req: &Request<reqwest::Body>,
     ) -> Result<Key, s3_core::S3Error> {
         let auth_string = req
             .headers()

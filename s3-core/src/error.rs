@@ -8,7 +8,7 @@ pub enum S3Error {
     BucketNotEmpty,
     KeyTooLong(String),
     InvalidArgument,
-    InvalidBucketName,
+    InvalidBucketName(String),
     InvalidAccessKeyId,
     MissingDateHeader,
     NoSuchBucket(String),
@@ -92,11 +92,11 @@ fn s3error_to_error(error: &S3Error) -> Error {
             resource: "".to_string(),
             request_id: "".to_string(),
         },
-        S3Error::InvalidBucketName => Error {
+        S3Error::InvalidBucketName(bucket) => Error {
             status: http::StatusCode::BAD_REQUEST.into(),
             code: "InvalidBucketName".to_string(),
             message: "The specified bucket is not valid.".to_string(),
-            resource: "".to_string(),
+            resource: bucket.to_string(),
             request_id: "".to_string(),
         },
         S3Error::AuthorizationHeaderMalformed => Error {

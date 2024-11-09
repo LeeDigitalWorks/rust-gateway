@@ -28,8 +28,8 @@ impl Filter for ParserFilter {
             }
         }
 
-        if !s3_core::is_valid_bucket_name(&result.bucket) {
-            return Err(S3Error::InvalidBucketName);
+        if !result.bucket.is_empty() && !s3_core::is_valid_bucket_name(&result.bucket) {
+            return Err(S3Error::InvalidBucketName(result.bucket));
         }
 
         data.action = result.action;

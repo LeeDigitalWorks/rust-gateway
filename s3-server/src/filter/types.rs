@@ -12,7 +12,7 @@ pub trait Filter: Send + Sync {
 
 #[derive(Debug)]
 pub struct S3Data {
-    pub req: axum::http::Request<axum::body::Bytes>,
+    pub req: axum::http::Request<reqwest::Body>,
     pub res: ResponseData,
 
     // Request ID
@@ -38,7 +38,7 @@ pub struct S3Data {
 impl S3Data {
     pub fn new() -> Self {
         Self {
-            req: axum::http::Request::new(Bytes::new()),
+            req: axum::http::Request::new(reqwest::Body::default()),
             res: ResponseData::new(),
             request_id: "".to_string(),
             auth_key: Key {
