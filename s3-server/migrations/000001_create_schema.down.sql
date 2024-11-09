@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS buckets;
+DROP TABLE IF EXISTS objects;

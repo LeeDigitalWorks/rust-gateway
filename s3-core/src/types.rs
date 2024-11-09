@@ -3,7 +3,9 @@ use std::collections::HashMap;
 
 #[derive(Deserialize, Serialize, Default, Debug, Clone, PartialEq)]
 pub struct Bucket {
+    #[serde(rename = "Name")]
     pub name: String,
+    #[serde(rename = "CreationDate")]
     pub creation_date: String,
 }
 
@@ -22,6 +24,7 @@ pub struct Object {
 pub struct Owner {
     #[serde(rename = "ID")]
     pub id: String,
+    #[serde(rename = "DisplayName")]
     pub display_name: String,
 }
 

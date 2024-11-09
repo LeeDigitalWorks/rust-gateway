@@ -12,7 +12,8 @@ lto = true
 
 [workspace.dependencies]
 async-trait = "0.1.83"
-aws-sdk-s3 = "1.59.0"
+aws-sdk-s3 = { version = "1.59.0", features = ["behavior-version-latest"] }
+aws-smithy-xml = "0.60.9"
 axum = { version = "0.7.7", features = ["multipart"] }
 chrono = "0.4.38"
 prost = "0.13.3"

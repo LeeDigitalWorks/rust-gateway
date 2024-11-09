@@ -1,13 +1,14 @@
-s3domain = ["localhost:8000"]
-region = "us-west-1"
+s3domain = ["localhost:3000"]
+region = "sfo3"
 log_path = "/var/log/rust-gateway/rust-gateway.log"
 access_log_path = "/var/log/rust-gateway/access.log"
 access_log_format = "{combined}"
 panic_log_path = "/var/log/rust-gateway/panic.log"
-log_level = "info"
+log_level = "debug"
 pid_file = "/var/run/rust-gateway/rust-gateway.pid"
-bind_api_address = "127.0.0.1:8000"
+bind_api_address = "127.0.0.1:3000"
 bind_admin_address = "0.0.0.0:9000"
+iam_address = "http://127.0.0.1:8000"
 admin_key = "secret"
 ssl_key_path = ""
 ssl_cert_path = ""
@@ -20,8 +21,8 @@ reserved_origins = "s3.test.com,s3-internal.test.com"
 
 # Meta Config
 meta_cache_type = 2
-meta_store = "tidb"
-tidb_info = "root:@tcp(10.5.0.17:4000)/yig"
+meta_store = "postgresdb"
+postgresdb_info = "postgres://postgres:postgres@postgres:5432/rust_s3?sslmode=disable"
 keepalive = true
 enable_compression = false
 enable_usage_push = false
@@ -51,5 +52,3 @@ db_conn_max_life_seconds = 300
 download_buf_pool_size = 8388608 #8MB
 upload_min_chunk_size = 524288 #512KB
 upload_max_chunk_size = 8388608 #8MB
-
-# S3Map Config

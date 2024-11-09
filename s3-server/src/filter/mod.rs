@@ -8,4 +8,4 @@ pub use authentication::AuthenticationFilter;
 pub use parser::ParserFilter;
 pub use request_id::RequestIdFilter;
 pub use secret_key::SecretKeyFilter;
-pub use types::{run_filters, Filter, S3Data};
+pub use types::{Filter, FilterChain, S3Data};

@@ -23,7 +23,7 @@ impl Router {
         }
     }
 
-    pub fn match_result(&self, req: &axum::http::Request<axum::body::Bytes>) -> Result {
+    pub fn match_result(&self, req: &axum::http::Request<reqwest::Body>) -> Result {
         let req_host = req.uri().host().unwrap_or("").to_string();
 
         for host in &self.hosts {
@@ -61,7 +61,7 @@ impl Router {
         host: &str,
         bucket: &str,
         key: &str,
-        req: &axum::http::Request<axum::body::Bytes>,
+        req: &axum::http::Request<reqwest::Body>,
     ) -> Result {
         let method = req.method().as_str();
         let mut matcher = &self.route_matcher.key;
@@ -823,16 +823,16 @@ impl Route {
         }
     }
 
-    pub fn match_route(&self, req: &axum::http::Request<axum::body::Bytes>) -> bool {
+    pub fn match_route(&self, req: &axum::http::Request<reqwest::Body>) -> bool {
         self.arguments.iter().all(|arg| arg(&req))
     }
 }
 
-type HasArguments = Box<dyn Fn(&Request<Bytes>) -> bool + Send + Sync>;
+type HasArguments = Box<dyn Fn(&Request<reqwest::Body>) -> bool + Send + Sync>;
 
 fn has_query(name: &str) -> HasArguments {
     let name = name.to_string();
-    Box::new(move |req: &axum::http::Request<axum::body::Bytes>| {
+    Box::new(move |req: &axum::http::Request<reqwest::Body>| {
         let query = req.uri().query().unwrap_or("");
         query.contains(&name)
     })
@@ -841,7 +841,7 @@ fn has_query(name: &str) -> HasArguments {
 fn has_query_value(name: &str, value: &str) -> HasArguments {
     let name = name.to_string();
     let value = value.to_string();
-    Box::new(move |req: &axum::http::Request<axum::body::Bytes>| {
+    Box::new(move |req: &axum::http::Request<reqwest::Body>| {
         let query = req
             .uri()
             .query()
@@ -860,13 +860,13 @@ fn has_query_value(name: &str, value: &str) -> HasArguments {
 
 fn has_header(name: &str) -> HasArguments {
     let name = name.to_string();
-    Box::new(move |req: &axum::http::Request<axum::body::Bytes>| req.headers().get(&name).is_some())
+    Box::new(move |req: &axum::http::Request<reqwest::Body>| req.headers().get(&name).is_some())
 }
 
 fn has_header_value(name: &str, value: &str) -> HasArguments {
     let name = name.to_string();
     let value = value.to_string();
-    Box::new(move |req: &axum::http::Request<axum::body::Bytes>| {
+    Box::new(move |req: &axum::http::Request<reqwest::Body>| {
         req.headers()
             .get(&name)
             .map(|v| v.to_str().unwrap_or("") == value)

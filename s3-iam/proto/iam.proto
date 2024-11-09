@@ -5,7 +5,7 @@ import "google/protobuf/timestamp.proto";
 package iam;
 
 message User {
-    uint64 id = 1;
+    int64 id = 1;
     string name = 2;
     string email = 3;
     google.protobuf.Timestamp created_at = 4;
@@ -14,7 +14,7 @@ message User {
 
 message Key {
     uint64 id = 1;
-    uint64 user_id = 2;
+    int64 user_id = 2;
     string name = 3;
     string access_key = 4;
     string secret_key = 5;
@@ -47,7 +47,7 @@ message CreateUserResponse {
 }
 
 message GetUserRequest {
-    uint64 id = 1;
+    int64 id = 1;
 }
 
 message GetUserResponse {
@@ -55,13 +55,13 @@ message GetUserResponse {
 }
 
 message DeleteUserRequest {
-    uint64 id = 1;
+    int64 id = 1;
 }
 
 message DeleteUserResponse {}
 
 message CreateKeyRequest {
-    uint64 user_id = 1;
+    int64 user_id = 1;
     string name = 2;
     Grant grant = 3;
 }
@@ -71,14 +71,14 @@ message CreateKeyResponse {
 }
 
 message DeleteKeyRequest {
-    uint64 user_id = 1;
+    int64 user_id = 1;
     string access_key = 2;
 }
 
 message DeleteKeyResponse {}
 
 message ListKeysRequest {
-    uint64 user_id = 1;
+    int64 user_id = 1;
 }
 
 message ListKeysResponse {

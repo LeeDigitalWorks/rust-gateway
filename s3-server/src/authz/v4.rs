@@ -146,7 +146,7 @@ pub fn get_signature(signing_key: Vec<u8>, string_to_sign: &str) -> String {
     const_hex::encode(hmac_sha256(signing_key, string_to_sign))
 }
 
-fn get_payload_hash(req: &Request<axum::body::Bytes>) -> String {
+fn get_payload_hash(req: &Request<reqwest::Body>) -> String {
     if let Some(hash) = req.headers().get("x-amz-content-sha256") {
         return hash.to_str().unwrap().to_string();
     }
@@ -173,7 +173,7 @@ fn url_encode(s: &str, encode_slash: bool) -> String {
 }
 
 pub fn get_canonical_request(
-    req: &Request<axum::body::Bytes>,
+    req: &Request<reqwest::Body>,
     signed_headers: &Vec<String>,
 ) -> String {
     let method = req.method().as_str();
@@ -260,7 +260,7 @@ mod tests {
             .header("x-amz-content-sha256", UNSIGNED_HASH)
             .header("x-amz-date", "20130524T000000Z")
             .uri("/test.txt")
-            .body(axum::body::Bytes::new())
+            .body(reqwest::Body::default())
             .unwrap();
 
         let signed_headers = Vec::from(["host", "range", "x-amz-content-sha256", "x-amz-date"])
@@ -304,7 +304,7 @@ mod tests {
             .header("x-amz-date", "20130524T000000Z")
             .header("x-amz-storage-class", "REDUCED_REDUNDANCY")
             .uri("/test$file.text")
-            .body(axum::body::Bytes::from("Welcome to Amazon S3."))
+            .body(reqwest::Body::from("Welcome to Amazon S3."))
             .unwrap();
 
         let signed_headers = Vec::from([
@@ -351,7 +351,7 @@ mod tests {
             .header("x-amz-content-sha256", UNSIGNED_HASH)
             .header("x-amz-date", "20130524T000000Z")
             .uri("/?lifecycle")
-            .body(axum::body::Bytes::new())
+            .body(reqwest::Body::default())
             .unwrap();
 
         let signed_headers = Vec::from(["host", "x-amz-content-sha256", "x-amz-date"])
@@ -392,7 +392,7 @@ mod tests {
             .header("x-amz-content-sha256", UNSIGNED_HASH)
             .header("x-amz-date", "20130524T000000Z")
             .uri("/?max-keys=2&prefix=J")
-            .body(axum::body::Bytes::new())
+            .body(reqwest::Body::default())
             .unwrap();
 
         let signed_headers = Vec::from(["host", "x-amz-content-sha256", "x-amz-date"])

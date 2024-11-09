@@ -1,10 +1,12 @@
+#[derive(Debug, Default)]
 pub struct Bucket {
     pub id: uuid::Uuid,
     pub name: String,
-    pub user_id: u64,
+    pub user_id: i64,
     pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
+#[derive(Debug, Default)]
 pub struct Object {
     pub bucket_id: uuid::Uuid,
     pub key: String,
