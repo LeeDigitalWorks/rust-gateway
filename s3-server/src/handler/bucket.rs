@@ -8,16 +8,8 @@ use crate::{
 };
 
 impl Server {
-    pub async fn list_buckets(
-        state: &Arc<RwLock<AppState>>,
-        data: S3Data,
-    ) -> axum::response::Response {
-        let response = state
-            .read()
-            .await
-            .backend
-            .list_buckets(&data.auth_key.user_id)
-            .await;
+    pub async fn list_buckets(state: &Arc<AppState>, data: S3Data) -> axum::response::Response {
+        let response = state.backend.list_buckets(&data.auth_key.user_id).await;
         match response {
             Ok(response) => {
                 return axum::response::IntoResponse::into_response(response.into_response());
@@ -28,13 +20,8 @@ impl Server {
         }
     }
 
-    pub async fn create_bucket(
-        state: &Arc<RwLock<AppState>>,
-        data: S3Data,
-    ) -> axum::response::Response {
+    pub async fn create_bucket(state: &Arc<AppState>, data: S3Data) -> axum::response::Response {
         let response = state
-            .read()
-            .await
             .backend
             .create_bucket(&data.bucket_name, &data.auth_key.user_id)
             .await;
@@ -53,13 +40,8 @@ impl Server {
         }
     }
 
-    pub async fn delete_bucket(
-        state: &Arc<RwLock<AppState>>,
-        data: S3Data,
-    ) -> axum::response::Response {
+    pub async fn delete_bucket(state: &Arc<AppState>, data: S3Data) -> axum::response::Response {
         let response = state
-            .read()
-            .await
             .backend
             .delete_bucket(&data.bucket_name, &data.auth_key.user_id)
             .await;

@@ -14,8 +14,8 @@ pub struct Database {
 }
 
 impl Database {
-    pub fn new(pool: sqlx::PgPool) -> Result<Self, sqlx::Error> {
-        Ok(Self { pool })
+    pub fn new(pool: sqlx::PgPool) -> Self {
+        Self { pool }
     }
 }
 

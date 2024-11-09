@@ -8,19 +8,19 @@ use axum::routing::any;
 use axum::{extract::State, Router};
 use s3_core::S3Error;
 use s3_iam::iam::StreamKeysRequest;
+use sync_wrapper::SyncStream;
 use tokio::signal::unix::{signal, SignalKind};
 use tokio::sync::RwLock;
-use sync_wrapper::SyncStream;
 
 use crate::authz::{Authz, Key};
 use crate::filter::{
-    run_filters, AuthenticationFilter, Filter, ParserFilter, RequestIdFilter, S3Data,
+    AuthenticationFilter, Filter, FilterChain, ParserFilter, RequestIdFilter, S3Data,
     SecretKeyFilter,
 };
 
 pub struct Server {
     pub addr: String,
-    pub app_state: Arc<RwLock<AppState>>,
+    pub app_state: Arc<AppState>,
     pub router: Router,
 }
 
@@ -29,8 +29,8 @@ impl Server {
         addr: String,
         hosts: Vec<String>,
         client: s3_iam::iam::iam_client::IamClient<tonic::transport::Channel>,
+        backend: Arc<Box<dyn crate::backend::Indexer>>,
     ) -> Self {
-        let backend = Arc::new(crate::backend::InMemoryBackend::new());
         let keys = Arc::new(RwLock::new(HashMap::new()));
 
         // Refresh keys
@@ -42,11 +42,12 @@ impl Server {
             Box::new(ParserFilter::new(hosts)),
             Box::new(SecretKeyFilter::new()),
         ];
-        let app_state = Arc::new(RwLock::new(AppState {
+        let filter_chain = Arc::new(FilterChain::new(filters));
+        let app_state = Arc::new(AppState {
             backend,
             keys,
-            filters,
-        }));
+            filter_chain,
+        });
 
         let mut server = Server {
             addr,
@@ -57,7 +58,7 @@ impl Server {
         let app = Router::new()
             .route("/", any(Self::handle_request))
             .route("/*rest", any(Self::handle_request))
-            .with_state(Arc::clone(&app_state));
+            .with_state(app_state);
 
         server.router = app;
         server
@@ -106,17 +107,17 @@ impl Server {
         }
     }
 
-    async fn handle_request(State(state): State<Arc<RwLock<AppState>>>, req: Request) -> Response {
-        let req = req.map(|body| reqwest::Body::wrap_stream(SyncStream::new(body.into_data_stream())));
+    async fn handle_request(State(state): State<Arc<AppState>>, req: Request) -> Response {
+        let req =
+            req.map(|body| reqwest::Body::wrap_stream(SyncStream::new(body.into_data_stream())));
         let mut data = S3Data::new();
         data.req = req;
-        let mut write_only = state.write().await;
-        let filters = &mut write_only.filters;
-        let response = run_filters(filters, &mut data).await;
-        if let Err(error) = response {
-            return axum::response::IntoResponse::into_response(error);
+        match state.filter_chain.run_filters(&mut data).await {
+            Ok(_) => {}
+            Err(e) => {
+                return axum::response::IntoResponse::into_response(e);
+            }
         }
-        drop(write_only);
 
         // TODO: Route to the correct handler
         match data.action {
@@ -129,6 +130,12 @@ impl Server {
             s3_core::S3Action::DeleteBucket => {
                 return Self::delete_bucket(&state, data).await;
             }
+            s3_core::S3Action::PutObject => {
+                return Self::put_object(&state, data).await;
+            }
+            s3_core::S3Action::GetObject => {
+                return Self::get_object(&state, data).await;
+            }
             _ => {
                 return axum::response::IntoResponse::into_response(S3Error::NotImplemented);
             }
@@ -137,9 +144,9 @@ impl Server {
 }
 
 pub struct AppState {
-    pub backend: Arc<dyn crate::backend::Indexer>,
+    pub backend: Arc<Box<dyn crate::backend::Indexer>>,
     pub keys: Arc<RwLock<HashMap<String, Key>>>,
-    pub filters: Vec<Box<dyn Filter>>,
+    pub filter_chain: Arc<FilterChain>,
 }
 
 async fn shutdown_signal() {

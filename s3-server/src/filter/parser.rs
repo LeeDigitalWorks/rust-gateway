@@ -19,7 +19,7 @@ impl ParserFilter {
 
 #[async_trait]
 impl Filter for ParserFilter {
-    async fn handle(&mut self, data: &mut S3Data) -> Result<(), S3Error> {
+    async fn handle(&self, data: &mut S3Data) -> Result<(), S3Error> {
         let result = self.router.match_result(&data.req);
 
         if !result.key.is_empty() {

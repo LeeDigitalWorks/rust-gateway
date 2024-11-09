@@ -76,8 +76,6 @@ impl crate::backend::IndexReader for FullstackBackend {
 #[async_trait]
 impl crate::backend::IndexWriter for FullstackBackend {
     async fn create_bucket(&self, bucket_name: &str, user_id: &i64) -> Result<(), S3Error> {
-        // Call proxy backend to create bucket
-        self.proxy.create_bucket(bucket_name, user_id).await?;
         // Call database backend to create bucket
         self.postgres
             .create_bucket(Bucket {
@@ -87,7 +85,12 @@ impl crate::backend::IndexWriter for FullstackBackend {
                 created_at: chrono::Utc::now(),
             })
             .await
-            .map_err(|_| S3Error::InternalError)?;
+            .map_err(|e| {
+                tracing::error!("Error creating bucket: {:?}", e);
+                S3Error::InternalError
+            })?;
+        // Call proxy backend to create bucket
+        self.proxy.create_bucket(bucket_name, user_id).await?;
         Ok(())
     }
 
@@ -98,7 +101,10 @@ impl crate::backend::IndexWriter for FullstackBackend {
         self.postgres
             .delete_bucket(bucket_name, user_id)
             .await
-            .map_err(|_| S3Error::InternalError)?;
+            .map_err(|e| {
+                tracing::error!("Error deleting bucket: {:?}", e);
+                S3Error::InternalError
+            })?;
         Ok(())
     }
 

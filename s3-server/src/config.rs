@@ -11,6 +11,8 @@ pub struct Config {
     pub bind_api_address: String,
     pub bind_admin_address: String,
     pub iam_address: String,
+    pub meta_store: String,
+    pub postgresdb_info: Option<String>,
 }
 
 impl Config {

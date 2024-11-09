@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use axum::{
     async_trait,
     body::{Body, Bytes},
@@ -7,7 +9,7 @@ use s3_core::{response::ResponseData, S3Action, S3Error};
 use crate::{authz::Key, backend::types};
 #[async_trait]
 pub trait Filter: Send + Sync {
-    async fn handle(&mut self, data: &mut S3Data) -> Result<(), S3Error>;
+    async fn handle(&self, data: &mut S3Data) -> Result<(), S3Error>;
 }
 
 #[derive(Debug)]
@@ -55,14 +57,23 @@ impl S3Data {
     }
 }
 
-pub async fn run_filters(
-    filters: &mut Vec<Box<dyn Filter>>,
-    data: &mut S3Data,
-) -> Result<(), S3Error> {
-    for filter in filters {
-        filter.handle(data).await?;
+pub struct FilterChain {
+    filters: Arc<Vec<Box<dyn Filter>>>,
+}
+
+impl FilterChain {
+    pub fn new(filters: Vec<Box<dyn Filter>>) -> Self {
+        Self {
+            filters: Arc::new(filters),
+        }
     }
 
-    tracing::debug!(operation = ?data.action, "Request completed");
-    Ok(())
+    pub async fn run_filters(&self, data: &mut S3Data) -> Result<(), S3Error> {
+        for filter in self.filters.iter() {
+            filter.handle(data).await?;
+        }
+
+        tracing::debug!(operation = ?data.action, "Request completed");
+        Ok(())
+    }
 }

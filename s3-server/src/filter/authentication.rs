@@ -17,7 +17,7 @@ impl AuthenticationFilter {
 
 #[async_trait]
 impl Filter for AuthenticationFilter {
-    async fn handle(&mut self, data: &mut S3Data) -> Result<(), S3Error> {
+    async fn handle(&self, data: &mut S3Data) -> Result<(), S3Error> {
         data.auth_key = self.authz.check(&data.req).await?;
         Ok(())
     }

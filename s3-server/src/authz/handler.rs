@@ -53,7 +53,7 @@ impl Authz {
         Self { keys }
     }
 
-    pub async fn check(&mut self, req: &Request<reqwest::Body>) -> Result<Key, S3Error> {
+    pub async fn check(&self, req: &Request<reqwest::Body>) -> Result<Key, S3Error> {
         match get_auth_type(req) {
             AuthType::SignedV4 => match self.check_signature_header_match_v4(req).await {
                 Ok(key) => Ok(key),
@@ -63,7 +63,7 @@ impl Authz {
         }
     }
 
-    pub async fn get_key(&mut self, access_key: &str) -> Result<Key, S3Error> {
+    pub async fn get_key(&self, access_key: &str) -> Result<Key, S3Error> {
         let cache = self.keys.read().await;
         if let Some(key) = cache.get(access_key) {
             return Ok(key.clone());
@@ -72,7 +72,7 @@ impl Authz {
     }
 
     pub async fn check_signature_header_match_v4(
-        &mut self,
+        &self,
         req: &Request<reqwest::Body>,
     ) -> Result<Key, s3_core::S3Error> {
         let auth_string = req

@@ -11,6 +11,12 @@ pub struct StorageBackend {
 }
 
 impl StorageBackend {
+    pub fn new(s3_client: aws_sdk_s3::Client) -> Self {
+        Self { s3_client }
+    }
+}
+
+impl StorageBackend {
     async fn list_buckets(&self, _user_id: &i64) -> Result<ListBucketsResponse, S3Error> {
         let resp = self.s3_client.list_buckets().send().await;
         match resp {
