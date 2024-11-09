@@ -9,7 +9,7 @@ axum = { workspace = true, features = ["multipart", "macros"] }
 tokio = { workspace = true }
 tonic = { workspace = true }
 tracing = "0.1.40"
-tracing-subscriber = "0.3.18"
+tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 s3-core = { path = "../s3-core" }
 s3-iam = { path = "../s3-iam" }
 hmac = "0.12.1"
@@ -21,4 +21,6 @@ const-hex = "1.13.1"
 subtle = "2.6.1"
 uuid = { version = "1.11.0", features = ["fast-rng", "v4", "v7"] }
 sqlx = { version = "0.8", features = [ "runtime-tokio", "tls-native-tls", "uuid", "chrono", "json", "postgres" ] }
+serde = { workspace = true }
 serde_json = "1.0.132"
+toml = "0.8.19"

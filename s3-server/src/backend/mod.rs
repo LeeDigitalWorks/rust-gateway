@@ -27,8 +27,9 @@ pub mod memory;
 pub use memory::InMemoryBackend;
 pub mod proxy;
 pub use proxy::ProxyBackend;
-pub mod database;
-pub use database::*;
+mod database;
+use database::*;
 pub mod fullstack;
+pub use fullstack::FullstackBackend;
 
 pub mod types;

@@ -1,5 +1,11 @@
+use std::str::FromStr;
+
+use tonic::transport::Endpoint;
+use tracing_subscriber::EnvFilter;
+
 mod authz;
 mod backend;
+mod config;
 mod filter;
 mod handler;
 mod limiter;
@@ -7,18 +13,26 @@ mod router;
 mod server;
 
 #[tokio::main]
-async fn main() {
-    tracing_subscriber::fmt::init();
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let config_path = std::env::var("CONFIG_PATH").unwrap_or_else(|_| "config.toml".to_string());
+    let config = config::Config::from_file(&config_path)?;
 
-    let iam_addr = "http://0.0.0.0:8000";
-    let client = s3_iam::iampb::iam::iam_client::IamClient::connect(iam_addr)
-        .await
+    let level = tracing::Level::from_str(&config.log_level)?;
+
+    let env_filter = EnvFilter::builder()
+        .with_default_directive(level.into())
+        .parse("s3-server=debug,warn")?;
+    tracing_subscriber::fmt()
+        .with_env_filter(env_filter)
+        .with_target(true)
+        .with_line_number(true)
+        .with_thread_ids(true)
+        .try_init()
         .unwrap();
 
-    let hosts = vec!["127.0.0.1:3000".to_string()];
+    let endpoint = Endpoint::from_str(&config.iam_address)?;
+    let client = s3_iam::iampb::iam::iam_client::IamClient::new(endpoint.connect_lazy());
 
-    let port = std::env::var("PORT").unwrap_or_else(|_| "3000".to_string());
-    let addr = format!("0.0.0.0:{port}");
-    let server = server::Server::new(addr, hosts, client).await;
-    server.start().await.unwrap();
+    let server = server::Server::new(config.bind_admin_address, config.s3domain, client).await;
+    Ok(server.start().await?)
 }

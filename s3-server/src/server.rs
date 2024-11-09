@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::io::Error;
+use std::error::Error;
 use std::sync::Arc;
 
 use axum::extract::Request;
@@ -62,7 +62,7 @@ impl Server {
         server
     }
 
-    pub async fn start(self) -> Result<(), Error> {
+    pub async fn start(self) -> Result<(), Box<dyn Error>> {
         let listener = tokio::net::TcpListener::bind(&self.addr).await.unwrap();
         tracing::debug!("listening on {}", listener.local_addr().unwrap());
         axum::serve(listener, self.router)
@@ -77,8 +77,13 @@ impl Server {
     ) {
         loop {
             let request = tonic::Request::new(StreamKeysRequest::default());
-            let mut stream = client.stream_keys(request).await.unwrap().into_inner();
+            let stream = client.stream_keys(request).await;
+            if stream.is_err() {
+                tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
+                continue;
+            }
             let mut new_keys = HashMap::new();
+            let mut stream = stream.unwrap().into_inner();
             while let Some(resp) = stream.message().await.unwrap() {
                 if let Some(key) = resp.key {
                     new_keys.insert(
