@@ -30,6 +30,9 @@ fn create_backend(config: &Config) -> Result<Box<dyn crate::backend::Indexer>, S
 
             let access_key_id = std::env::var("AWS_ACCESS_KEY_ID").unwrap_or_default();
             let secret_access_key = std::env::var("AWS_SECRET_ACCESS_KEY").unwrap_or_default();
+
+            tracing::debug!("Using AWS credentials: {}", access_key_id);
+
             let sdk_config = aws_config::SdkConfig::builder()
                 .region(Region::new(config.region.clone()))
                 .endpoint_url("https://sfo3.digitaloceanspaces.com")

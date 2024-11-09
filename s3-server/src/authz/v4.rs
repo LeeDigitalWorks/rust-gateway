@@ -175,7 +175,7 @@ fn url_encode(s: &str, encode_slash: bool) -> String {
 pub fn get_canonical_request(
     req: &Request<reqwest::Body>,
     signed_headers: &Vec<String>,
-) -> String {
+) -> Result<String, s3_core::S3Error> {
     let method = req.method().as_str();
 
     let uri = url_encode(req.uri().path(), false);
@@ -211,12 +211,12 @@ pub fn get_canonical_request(
 
     // Must have host header
     if !headers.contains_key("host") {
-        return "".to_string();
+        return Err(s3_core::S3Error::AuthorizationHeaderMalformed);
     }
 
     // Must have content-md5 header if present in request
     if req.headers().contains_key("Content-Md5") && !headers.contains_key("content-md5") {
-        return "".to_string();
+        return Err(s3_core::S3Error::AuthorizationHeaderMalformed);
     }
 
     let headers = headers
@@ -229,10 +229,10 @@ pub fn get_canonical_request(
 
     let payload_hash = get_payload_hash(req);
 
-    format!(
+    Ok(format!(
         "{}\n{}\n{}\n{}\n\n{}\n{}",
         method, uri, query, headers, signed_headers, payload_hash
-    )
+    ))
 }
 
 #[cfg(test)]
@@ -267,7 +267,7 @@ mod tests {
             .iter()
             .map(|s| s.to_string())
             .collect();
-        let canonical_request = get_canonical_request(&req, &signed_headers);
+        let canonical_request = get_canonical_request(&req, &signed_headers).unwrap();
         assert_eq!(
             canonical_request,
             "GET\n/test.txt\n\nhost:examplebucket.s3.amazonaws.com\nrange:bytes=0-9\nx-amz-content-sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\nx-amz-date:20130524T000000Z\n\nhost;range;x-amz-content-sha256;x-amz-date\ne3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -317,7 +317,7 @@ mod tests {
         .iter()
         .map(|s| s.to_string())
         .collect();
-        let canonical_request = get_canonical_request(&req, &signed_headers);
+        let canonical_request = get_canonical_request(&req, &signed_headers).unwrap();
         assert_eq!(
             canonical_request,
             "PUT\n/test%24file.text\n\ndate:Fri, 24 May 2013 00:00:00 GMT\nhost:examplebucket.s3.amazonaws.com\nx-amz-content-sha256:44ce7dd67c959e0d3524ffac1771dfbba87d2b6b4b4e99e42034a8b803f8b072\nx-amz-date:20130524T000000Z\nx-amz-storage-class:REDUCED_REDUNDANCY\n\ndate;host;x-amz-content-sha256;x-amz-date;x-amz-storage-class\n44ce7dd67c959e0d3524ffac1771dfbba87d2b6b4b4e99e42034a8b803f8b072"
@@ -358,7 +358,7 @@ mod tests {
             .iter()
             .map(|s| s.to_string())
             .collect();
-        let canonical_request = get_canonical_request(&req, &signed_headers);
+        let canonical_request = get_canonical_request(&req, &signed_headers).unwrap();
         assert_eq!(
             canonical_request,
             "GET\n/\nlifecycle=\nhost:examplebucket.s3.amazonaws.com\nx-amz-content-sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\nx-amz-date:20130524T000000Z\n\nhost;x-amz-content-sha256;x-amz-date\ne3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -399,7 +399,7 @@ mod tests {
             .iter()
             .map(|s| s.to_string())
             .collect();
-        let canonical_request = get_canonical_request(&req, &signed_headers);
+        let canonical_request = get_canonical_request(&req, &signed_headers).unwrap();
         assert_eq!(
             canonical_request,
             "GET\n/\nmax-keys=2&prefix=J\nhost:examplebucket.s3.amazonaws.com\nx-amz-content-sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\nx-amz-date:20130524T000000Z\n\nhost;x-amz-content-sha256;x-amz-date\ne3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
