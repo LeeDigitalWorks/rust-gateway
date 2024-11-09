@@ -6,15 +6,11 @@ use s3_core::{
     S3Error,
 };
 
-pub struct ProxyBackend {
+pub struct StorageBackend {
     pub s3_client: aws_sdk_s3::Client,
 }
 
-#[async_trait]
-impl crate::backend::Indexer for ProxyBackend {}
-
-#[async_trait]
-impl crate::backend::IndexReader for ProxyBackend {
+impl StorageBackend {
     async fn list_buckets(&self, _user_id: &i64) -> Result<ListBucketsResponse, S3Error> {
         let resp = self.s3_client.list_buckets().send().await;
         match resp {
@@ -69,9 +65,8 @@ impl crate::backend::IndexReader for ProxyBackend {
     }
 }
 
-#[async_trait]
-impl crate::backend::IndexWriter for ProxyBackend {
-    async fn create_bucket(&self, bucket_name: &str, _user_id: &i64) -> Result<(), S3Error> {
+impl StorageBackend {
+    pub async fn create_bucket(&self, bucket_name: &str, _user_id: &i64) -> Result<(), S3Error> {
         let resp = self
             .s3_client
             .create_bucket()
@@ -87,7 +82,7 @@ impl crate::backend::IndexWriter for ProxyBackend {
         }
     }
 
-    async fn delete_bucket(&self, _bucket_name: &str, _user_id: &i64) -> Result<(), S3Error> {
+    pub async fn delete_bucket(&self, _bucket_name: &str, _user_id: &i64) -> Result<(), S3Error> {
         let resp = self
             .s3_client
             .delete_bucket()

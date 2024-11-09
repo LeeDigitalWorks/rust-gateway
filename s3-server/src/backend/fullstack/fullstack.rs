@@ -9,16 +9,16 @@ use uuid::{timestamp::context, Timestamp, Uuid};
 use crate::backend::{
     db::{Database, DatabaseStore},
     types::Bucket,
-    ProxyBackend,
+    StorageBackend,
 };
 
 pub struct FullstackBackend {
     postgres: Database,
-    proxy: ProxyBackend,
+    proxy: StorageBackend,
 }
 
 impl FullstackBackend {
-    pub fn new(postgres: Database, proxy: ProxyBackend) -> Self {
+    pub fn new(postgres: Database, proxy: StorageBackend) -> Self {
         Self { postgres, proxy }
     }
 }

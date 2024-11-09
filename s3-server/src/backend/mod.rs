@@ -25,8 +25,8 @@ pub trait IndexWriter: Send + Sync {
 
 pub mod memory;
 pub use memory::InMemoryBackend;
-pub mod proxy;
-pub use proxy::ProxyBackend;
+mod storage;
+use storage::StorageBackend;
 mod database;
 use database::*;
 pub mod fullstack;
