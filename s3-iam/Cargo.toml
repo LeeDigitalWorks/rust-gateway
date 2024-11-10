@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 chrono = { workspace = true }
-prost = { workspace = true}
+prost = { workspace = true }
 rand = "0.8.5"
 sqlx = { version = "0.8.2", features = ["runtime-tokio", "tls-rustls-ring"] }
 tokio = { workspace = true }

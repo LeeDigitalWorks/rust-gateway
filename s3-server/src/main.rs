@@ -11,7 +11,6 @@ mod backend;
 mod config;
 mod filter;
 mod handler;
-mod limiter;
 mod router;
 mod server;
 

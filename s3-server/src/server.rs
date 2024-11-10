@@ -39,7 +39,7 @@ impl Server {
             Box::new(RequestIdFilter::new()),
             Box::new(AuthenticationFilter::new(Authz::new(keys.clone()))),
             Box::new(ParserFilter::new(hosts)),
-            Box::new(SecretKeyFilter::new()),
+            Box::new(SecretKeyFilter::new(keys.clone())),
         ];
         let filter_chain = Arc::new(FilterChain::new(filters));
         let app_state = Arc::new(AppState {

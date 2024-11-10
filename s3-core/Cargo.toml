@@ -6,10 +6,10 @@ edition = "2021"
 [dependencies]
 aws-smithy-xml = { workspace = true }
 axum = { workspace = true }
+bytes = "1.7.2"
 chrono = { workspace = true }
-thiserror = { workspace = true }
+http = "1.1.0"
+quick-xml = { workspace = true }
 serde = { workspace = true }
 serde_derive = { workspace = true }
-bytes = "1.7.2"
-quick-xml = { workspace = true }
-http = "1.1.0"
+thiserror = { workspace = true }

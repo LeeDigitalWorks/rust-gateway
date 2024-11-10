@@ -21,7 +21,6 @@ CREATE TABLE buckets (
     id UUID PRIMARY KEY,
     name VARCHAR(63) NOT NULL,
     user_id BIGINT NOT NULL,
-    account_id TEXT NOT NULL,
     backend_id UUID NOT NULL REFERENCES storage_backends(id),
     versioning SMALLINT NOT NULL DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
@@ -35,6 +34,11 @@ CREATE TABLE buckets (
     policy JSONB DEFAULT NULL,
     backend_specific_name TEXT,  -- Native name in the backend (e.g., CEPH bucket name)
     UNIQUE(name)
+);
+
+CREATE TABLE users (
+    user_id BIGINT PRIMARY KEY,
+    max_buckets INT NOT NULL DEFAULT 100
 );
 
 -- Enhanced objects table
