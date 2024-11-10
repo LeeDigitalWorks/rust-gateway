@@ -11,7 +11,6 @@ mod backend;
 mod config;
 mod filter;
 mod handler;
-mod limiter;
 mod router;
 mod server;
 
@@ -30,6 +29,9 @@ fn create_backend(config: &Config) -> Result<Box<dyn crate::backend::Indexer>, S
 
             let access_key_id = std::env::var("AWS_ACCESS_KEY_ID").unwrap_or_default();
             let secret_access_key = std::env::var("AWS_SECRET_ACCESS_KEY").unwrap_or_default();
+
+            tracing::debug!("Using AWS credentials: {}", access_key_id);
+
             let sdk_config = aws_config::SdkConfig::builder()
                 .region(Region::new(config.region.clone()))
                 .endpoint_url("https://sfo3.digitaloceanspaces.com")
@@ -58,10 +60,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = config::Config::from_file(&config_path)?;
 
     let level = tracing::Level::from_str(&config.log_level)?;
+    let mut filter_string = "".to_string();
+    if config.debug_mode {
+        filter_string = format!("{}=debug", env!("CARGO_CRATE_NAME"));
+    }
 
     let env_filter = EnvFilter::builder()
         .with_default_directive(level.into())
-        .parse(format!("{}=debug,warn", env!("CARGO_CRATE_NAME")))?;
+        .parse(filter_string)?;
     tracing_subscriber::fmt()
         .with_env_filter(env_filter)
         .with_target(true)

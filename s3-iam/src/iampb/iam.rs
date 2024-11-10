@@ -162,10 +162,10 @@ pub mod iam_client {
         dead_code,
         missing_docs,
         clippy::wildcard_imports,
-        clippy::let_unit_value,
+        clippy::let_unit_value
     )]
-    use tonic::codegen::*;
     use tonic::codegen::http::Uri;
+    use tonic::codegen::*;
     #[derive(Debug, Clone)]
     pub struct IamClient<T> {
         inner: tonic::client::Grpc<T>,
@@ -196,10 +196,7 @@ pub mod iam_client {
             let inner = tonic::client::Grpc::with_origin(inner, origin);
             Self { inner }
         }
-        pub fn with_interceptor<F>(
-            inner: T,
-            interceptor: F,
-        ) -> IamClient<InterceptedService<T, F>>
+        pub fn with_interceptor<F>(inner: T, interceptor: F) -> IamClient<InterceptedService<T, F>>
         where
             F: tonic::service::Interceptor,
             T::ResponseBody: Default,
@@ -209,9 +206,8 @@ pub mod iam_client {
                     <T as tonic::client::GrpcService<tonic::body::BoxBody>>::ResponseBody,
                 >,
             >,
-            <T as tonic::codegen::Service<
-                http::Request<tonic::body::BoxBody>,
-            >>::Error: Into<StdError> + std::marker::Send + std::marker::Sync,
+            <T as tonic::codegen::Service<http::Request<tonic::body::BoxBody>>>::Error:
+                Into<StdError> + std::marker::Send + std::marker::Sync,
         {
             IamClient::new(InterceptedService::new(inner, interceptor))
         }
@@ -249,106 +245,73 @@ pub mod iam_client {
         pub async fn create_user(
             &mut self,
             request: impl tonic::IntoRequest<super::CreateUserRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::CreateUserResponse>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::unknown(
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
+        ) -> std::result::Result<tonic::Response<super::CreateUserResponse>, tonic::Status>
+        {
+            self.inner.ready().await.map_err(|e| {
+                tonic::Status::unknown(format!("Service was not ready: {}", e.into()))
+            })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static("/iam.IAM/CreateUser");
             let mut req = request.into_request();
-            req.extensions_mut().insert(GrpcMethod::new("iam.IAM", "CreateUser"));
+            req.extensions_mut()
+                .insert(GrpcMethod::new("iam.IAM", "CreateUser"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn get_user(
             &mut self,
             request: impl tonic::IntoRequest<super::GetUserRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::GetUserResponse>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::unknown(
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
+        ) -> std::result::Result<tonic::Response<super::GetUserResponse>, tonic::Status> {
+            self.inner.ready().await.map_err(|e| {
+                tonic::Status::unknown(format!("Service was not ready: {}", e.into()))
+            })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static("/iam.IAM/GetUser");
             let mut req = request.into_request();
-            req.extensions_mut().insert(GrpcMethod::new("iam.IAM", "GetUser"));
+            req.extensions_mut()
+                .insert(GrpcMethod::new("iam.IAM", "GetUser"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn delete_user(
             &mut self,
             request: impl tonic::IntoRequest<super::DeleteUserRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::DeleteUserResponse>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::unknown(
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
+        ) -> std::result::Result<tonic::Response<super::DeleteUserResponse>, tonic::Status>
+        {
+            self.inner.ready().await.map_err(|e| {
+                tonic::Status::unknown(format!("Service was not ready: {}", e.into()))
+            })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static("/iam.IAM/DeleteUser");
             let mut req = request.into_request();
-            req.extensions_mut().insert(GrpcMethod::new("iam.IAM", "DeleteUser"));
+            req.extensions_mut()
+                .insert(GrpcMethod::new("iam.IAM", "DeleteUser"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn create_key(
             &mut self,
             request: impl tonic::IntoRequest<super::CreateKeyRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::CreateKeyResponse>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::unknown(
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
+        ) -> std::result::Result<tonic::Response<super::CreateKeyResponse>, tonic::Status> {
+            self.inner.ready().await.map_err(|e| {
+                tonic::Status::unknown(format!("Service was not ready: {}", e.into()))
+            })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static("/iam.IAM/CreateKey");
             let mut req = request.into_request();
-            req.extensions_mut().insert(GrpcMethod::new("iam.IAM", "CreateKey"));
+            req.extensions_mut()
+                .insert(GrpcMethod::new("iam.IAM", "CreateKey"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn delete_key(
             &mut self,
             request: impl tonic::IntoRequest<super::DeleteKeyRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::DeleteKeyResponse>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::unknown(
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
+        ) -> std::result::Result<tonic::Response<super::DeleteKeyResponse>, tonic::Status> {
+            self.inner.ready().await.map_err(|e| {
+                tonic::Status::unknown(format!("Service was not ready: {}", e.into()))
+            })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static("/iam.IAM/DeleteKey");
             let mut req = request.into_request();
-            req.extensions_mut().insert(GrpcMethod::new("iam.IAM", "DeleteKey"));
+            req.extensions_mut()
+                .insert(GrpcMethod::new("iam.IAM", "DeleteKey"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn stream_keys(
@@ -358,57 +321,42 @@ pub mod iam_client {
             tonic::Response<tonic::codec::Streaming<super::StreamKeysResponse>>,
             tonic::Status,
         > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::unknown(
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
+            self.inner.ready().await.map_err(|e| {
+                tonic::Status::unknown(format!("Service was not ready: {}", e.into()))
+            })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static("/iam.IAM/StreamKeys");
             let mut req = request.into_request();
-            req.extensions_mut().insert(GrpcMethod::new("iam.IAM", "StreamKeys"));
+            req.extensions_mut()
+                .insert(GrpcMethod::new("iam.IAM", "StreamKeys"));
             self.inner.server_streaming(req, path, codec).await
         }
         pub async fn list_keys(
             &mut self,
             request: impl tonic::IntoRequest<super::ListKeysRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::ListKeysResponse>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::unknown(
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
+        ) -> std::result::Result<tonic::Response<super::ListKeysResponse>, tonic::Status> {
+            self.inner.ready().await.map_err(|e| {
+                tonic::Status::unknown(format!("Service was not ready: {}", e.into()))
+            })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static("/iam.IAM/ListKeys");
             let mut req = request.into_request();
-            req.extensions_mut().insert(GrpcMethod::new("iam.IAM", "ListKeys"));
+            req.extensions_mut()
+                .insert(GrpcMethod::new("iam.IAM", "ListKeys"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn get_key(
             &mut self,
             request: impl tonic::IntoRequest<super::GetKeyRequest>,
         ) -> std::result::Result<tonic::Response<super::GetKeyResponse>, tonic::Status> {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::unknown(
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
+            self.inner.ready().await.map_err(|e| {
+                tonic::Status::unknown(format!("Service was not ready: {}", e.into()))
+            })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static("/iam.IAM/GetKey");
             let mut req = request.into_request();
-            req.extensions_mut().insert(GrpcMethod::new("iam.IAM", "GetKey"));
+            req.extensions_mut()
+                .insert(GrpcMethod::new("iam.IAM", "GetKey"));
             self.inner.unary(req, path, codec).await
         }
     }
@@ -420,7 +368,7 @@ pub mod iam_server {
         dead_code,
         missing_docs,
         clippy::wildcard_imports,
-        clippy::let_unit_value,
+        clippy::let_unit_value
     )]
     use tonic::codegen::*;
     /// Generated trait containing gRPC methods that should be implemented for use with IamServer.
@@ -429,10 +377,7 @@ pub mod iam_server {
         async fn create_user(
             &self,
             request: tonic::Request<super::CreateUserRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::CreateUserResponse>,
-            tonic::Status,
-        >;
+        ) -> std::result::Result<tonic::Response<super::CreateUserResponse>, tonic::Status>;
         async fn get_user(
             &self,
             request: tonic::Request<super::GetUserRequest>,
@@ -440,29 +385,19 @@ pub mod iam_server {
         async fn delete_user(
             &self,
             request: tonic::Request<super::DeleteUserRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::DeleteUserResponse>,
-            tonic::Status,
-        >;
+        ) -> std::result::Result<tonic::Response<super::DeleteUserResponse>, tonic::Status>;
         async fn create_key(
             &self,
             request: tonic::Request<super::CreateKeyRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::CreateKeyResponse>,
-            tonic::Status,
-        >;
+        ) -> std::result::Result<tonic::Response<super::CreateKeyResponse>, tonic::Status>;
         async fn delete_key(
             &self,
             request: tonic::Request<super::DeleteKeyRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::DeleteKeyResponse>,
-            tonic::Status,
-        >;
+        ) -> std::result::Result<tonic::Response<super::DeleteKeyResponse>, tonic::Status>;
         /// Server streaming response type for the StreamKeys method.
         type StreamKeysStream: tonic::codegen::tokio_stream::Stream<
                 Item = std::result::Result<super::StreamKeysResponse, tonic::Status>,
-            >
-            + std::marker::Send
+            > + std::marker::Send
             + 'static;
         async fn stream_keys(
             &self,
@@ -471,10 +406,7 @@ pub mod iam_server {
         async fn list_keys(
             &self,
             request: tonic::Request<super::ListKeysRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::ListKeysResponse>,
-            tonic::Status,
-        >;
+        ) -> std::result::Result<tonic::Response<super::ListKeysResponse>, tonic::Status>;
         async fn get_key(
             &self,
             request: tonic::Request<super::GetKeyRequest>,
@@ -501,10 +433,7 @@ pub mod iam_server {
                 max_encoding_message_size: None,
             }
         }
-        pub fn with_interceptor<F>(
-            inner: T,
-            interceptor: F,
-        ) -> InterceptedService<Self, F>
+        pub fn with_interceptor<F>(inner: T, interceptor: F) -> InterceptedService<Self, F>
         where
             F: tonic::service::Interceptor,
         {
@@ -559,21 +488,15 @@ pub mod iam_server {
                 "/iam.IAM/CreateUser" => {
                     #[allow(non_camel_case_types)]
                     struct CreateUserSvc<T: Iam>(pub Arc<T>);
-                    impl<T: Iam> tonic::server::UnaryService<super::CreateUserRequest>
-                    for CreateUserSvc<T> {
+                    impl<T: Iam> tonic::server::UnaryService<super::CreateUserRequest> for CreateUserSvc<T> {
                         type Response = super::CreateUserResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
+                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::CreateUserRequest>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as Iam>::create_user(&inner, request).await
-                            };
+                            let fut = async move { <T as Iam>::create_user(&inner, request).await };
                             Box::pin(fut)
                         }
                     }
@@ -602,21 +525,15 @@ pub mod iam_server {
                 "/iam.IAM/GetUser" => {
                     #[allow(non_camel_case_types)]
                     struct GetUserSvc<T: Iam>(pub Arc<T>);
-                    impl<T: Iam> tonic::server::UnaryService<super::GetUserRequest>
-                    for GetUserSvc<T> {
+                    impl<T: Iam> tonic::server::UnaryService<super::GetUserRequest> for GetUserSvc<T> {
                         type Response = super::GetUserResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
+                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::GetUserRequest>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as Iam>::get_user(&inner, request).await
-                            };
+                            let fut = async move { <T as Iam>::get_user(&inner, request).await };
                             Box::pin(fut)
                         }
                     }
@@ -645,21 +562,15 @@ pub mod iam_server {
                 "/iam.IAM/DeleteUser" => {
                     #[allow(non_camel_case_types)]
                     struct DeleteUserSvc<T: Iam>(pub Arc<T>);
-                    impl<T: Iam> tonic::server::UnaryService<super::DeleteUserRequest>
-                    for DeleteUserSvc<T> {
+                    impl<T: Iam> tonic::server::UnaryService<super::DeleteUserRequest> for DeleteUserSvc<T> {
                         type Response = super::DeleteUserResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
+                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::DeleteUserRequest>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as Iam>::delete_user(&inner, request).await
-                            };
+                            let fut = async move { <T as Iam>::delete_user(&inner, request).await };
                             Box::pin(fut)
                         }
                     }
@@ -688,21 +599,15 @@ pub mod iam_server {
                 "/iam.IAM/CreateKey" => {
                     #[allow(non_camel_case_types)]
                     struct CreateKeySvc<T: Iam>(pub Arc<T>);
-                    impl<T: Iam> tonic::server::UnaryService<super::CreateKeyRequest>
-                    for CreateKeySvc<T> {
+                    impl<T: Iam> tonic::server::UnaryService<super::CreateKeyRequest> for CreateKeySvc<T> {
                         type Response = super::CreateKeyResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
+                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::CreateKeyRequest>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as Iam>::create_key(&inner, request).await
-                            };
+                            let fut = async move { <T as Iam>::create_key(&inner, request).await };
                             Box::pin(fut)
                         }
                     }
@@ -731,21 +636,15 @@ pub mod iam_server {
                 "/iam.IAM/DeleteKey" => {
                     #[allow(non_camel_case_types)]
                     struct DeleteKeySvc<T: Iam>(pub Arc<T>);
-                    impl<T: Iam> tonic::server::UnaryService<super::DeleteKeyRequest>
-                    for DeleteKeySvc<T> {
+                    impl<T: Iam> tonic::server::UnaryService<super::DeleteKeyRequest> for DeleteKeySvc<T> {
                         type Response = super::DeleteKeyResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
+                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::DeleteKeyRequest>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as Iam>::delete_key(&inner, request).await
-                            };
+                            let fut = async move { <T as Iam>::delete_key(&inner, request).await };
                             Box::pin(fut)
                         }
                     }
@@ -774,24 +673,17 @@ pub mod iam_server {
                 "/iam.IAM/StreamKeys" => {
                     #[allow(non_camel_case_types)]
                     struct StreamKeysSvc<T: Iam>(pub Arc<T>);
-                    impl<
-                        T: Iam,
-                    > tonic::server::ServerStreamingService<super::StreamKeysRequest>
-                    for StreamKeysSvc<T> {
+                    impl<T: Iam> tonic::server::ServerStreamingService<super::StreamKeysRequest> for StreamKeysSvc<T> {
                         type Response = super::StreamKeysResponse;
                         type ResponseStream = T::StreamKeysStream;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::ResponseStream>,
-                            tonic::Status,
-                        >;
+                        type Future =
+                            BoxFuture<tonic::Response<Self::ResponseStream>, tonic::Status>;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::StreamKeysRequest>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as Iam>::stream_keys(&inner, request).await
-                            };
+                            let fut = async move { <T as Iam>::stream_keys(&inner, request).await };
                             Box::pin(fut)
                         }
                     }
@@ -820,21 +712,15 @@ pub mod iam_server {
                 "/iam.IAM/ListKeys" => {
                     #[allow(non_camel_case_types)]
                     struct ListKeysSvc<T: Iam>(pub Arc<T>);
-                    impl<T: Iam> tonic::server::UnaryService<super::ListKeysRequest>
-                    for ListKeysSvc<T> {
+                    impl<T: Iam> tonic::server::UnaryService<super::ListKeysRequest> for ListKeysSvc<T> {
                         type Response = super::ListKeysResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
+                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::ListKeysRequest>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as Iam>::list_keys(&inner, request).await
-                            };
+                            let fut = async move { <T as Iam>::list_keys(&inner, request).await };
                             Box::pin(fut)
                         }
                     }
@@ -863,21 +749,15 @@ pub mod iam_server {
                 "/iam.IAM/GetKey" => {
                     #[allow(non_camel_case_types)]
                     struct GetKeySvc<T: Iam>(pub Arc<T>);
-                    impl<T: Iam> tonic::server::UnaryService<super::GetKeyRequest>
-                    for GetKeySvc<T> {
+                    impl<T: Iam> tonic::server::UnaryService<super::GetKeyRequest> for GetKeySvc<T> {
                         type Response = super::GetKeyResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
+                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::GetKeyRequest>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as Iam>::get_key(&inner, request).await
-                            };
+                            let fut = async move { <T as Iam>::get_key(&inner, request).await };
                             Box::pin(fut)
                         }
                     }
@@ -903,23 +783,19 @@ pub mod iam_server {
                     };
                     Box::pin(fut)
                 }
-                _ => {
-                    Box::pin(async move {
-                        let mut response = http::Response::new(empty_body());
-                        let headers = response.headers_mut();
-                        headers
-                            .insert(
-                                tonic::Status::GRPC_STATUS,
-                                (tonic::Code::Unimplemented as i32).into(),
-                            );
-                        headers
-                            .insert(
-                                http::header::CONTENT_TYPE,
-                                tonic::metadata::GRPC_CONTENT_TYPE,
-                            );
-                        Ok(response)
-                    })
-                }
+                _ => Box::pin(async move {
+                    let mut response = http::Response::new(empty_body());
+                    let headers = response.headers_mut();
+                    headers.insert(
+                        tonic::Status::GRPC_STATUS,
+                        (tonic::Code::Unimplemented as i32).into(),
+                    );
+                    headers.insert(
+                        http::header::CONTENT_TYPE,
+                        tonic::metadata::GRPC_CONTENT_TYPE,
+                    );
+                    Ok(response)
+                }),
             }
         }
     }

@@ -7,7 +7,7 @@ use s3_core::{
 };
 
 pub struct StorageBackend {
-    pub s3_client: aws_sdk_s3::Client,
+    s3_client: aws_sdk_s3::Client,
 }
 
 impl StorageBackend {

@@ -14,12 +14,12 @@ use crate::backend::{
 
 pub struct FullstackBackend {
     postgres: Database,
-    proxy: StorageBackend,
+    storage: StorageBackend,
 }
 
 impl FullstackBackend {
-    pub fn new(postgres: Database, proxy: StorageBackend) -> Self {
-        Self { postgres, proxy }
+    pub fn new(postgres: Database, storage: StorageBackend) -> Self {
+        Self { postgres, storage }
     }
 }
 
@@ -76,6 +76,25 @@ impl crate::backend::IndexReader for FullstackBackend {
 #[async_trait]
 impl crate::backend::IndexWriter for FullstackBackend {
     async fn create_bucket(&self, bucket_name: &str, user_id: &i64) -> Result<(), S3Error> {
+        // Check if user has reached the maximum number of buckets
+        let bucket_quota = self
+            .postgres
+            .get_bucket_quota(user_id)
+            .await
+            .map_err(|e| match e {
+                sqlx::Error::RowNotFound => S3Error::AccessDenied,
+                _ => {
+                    tracing::error!("Error getting bucket quota: {:?}", e);
+                    S3Error::InternalError
+                }
+            })?;
+        let buckets = self.postgres.list_buckets(user_id).await.map_err(|e| {
+            tracing::error!("Error listing buckets: {:?}", e);
+            S3Error::InternalError
+        })?;
+        if buckets.len() as i64 >= bucket_quota {
+            return Err(S3Error::TooManyBuckets);
+        }
         // Call database backend to create bucket
         self.postgres
             .create_bucket(Bucket {
@@ -90,21 +109,26 @@ impl crate::backend::IndexWriter for FullstackBackend {
                 S3Error::InternalError
             })?;
         // Call proxy backend to create bucket
-        self.proxy.create_bucket(bucket_name, user_id).await?;
+        self.storage.create_bucket(bucket_name, user_id).await?;
         Ok(())
     }
 
     async fn delete_bucket(&self, bucket_name: &str, user_id: &i64) -> Result<(), S3Error> {
-        // Delete bucket from proxy backend
-        self.proxy.delete_bucket(bucket_name, user_id).await?;
+        // Check if bucket is not empty
+
         // Delete bucket from database backend
         self.postgres
             .delete_bucket(bucket_name, user_id)
             .await
-            .map_err(|e| {
-                tracing::error!("Error deleting bucket: {:?}", e);
-                S3Error::InternalError
+            .map_err(|e| match e {
+                sqlx::Error::RowNotFound => S3Error::NoSuchBucket(bucket_name.to_string()),
+                _ => {
+                    tracing::error!("Error deleting bucket: {:?}", e);
+                    S3Error::InternalError
+                }
             })?;
+        // Delete bucket from proxy backend
+        self.storage.delete_bucket(bucket_name, user_id).await?;
         Ok(())
     }
 

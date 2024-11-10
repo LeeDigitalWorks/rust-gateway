@@ -86,7 +86,7 @@ impl Authz {
 
         let key = self.get_key(&auth_header.credential.access_key).await?;
 
-        let canonical_request = get_canonical_request(req, &auth_header.signed_headers);
+        let canonical_request = get_canonical_request(req, &auth_header.signed_headers)?;
 
         let string_to_sign =
             get_string_to_sign(date, &auth_header.credential.region, &canonical_request);

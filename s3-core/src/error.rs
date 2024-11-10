@@ -7,7 +7,7 @@ pub enum S3Error {
     BucketAlreadyExists(String),
     BucketNotEmpty,
     KeyTooLong(String),
-    InvalidArgument,
+    InvalidArgument(String),
     InvalidBucketName(String),
     InvalidAccessKeyId,
     MissingDateHeader,
@@ -18,6 +18,7 @@ pub enum S3Error {
     NotImplemented,
     RequestTimeTooSkewed,
     SignatureDoesNotMatch,
+    TooManyBuckets,
 }
 
 #[derive(Serialize, Debug)]
@@ -61,6 +62,13 @@ fn s3error_to_error(error: &S3Error) -> Error {
             status: http::StatusCode::FORBIDDEN.into(),
             code: "SignatureDoesNotMatch".to_string(),
             message: "The request signature we calculated does not match the signature you provided. Check your key and signing method.".to_string(),
+            resource: "".to_string(),
+            request_id: "".to_string(),
+        },
+        S3Error::InvalidArgument(message) => Error {
+            status: http::StatusCode::BAD_REQUEST.into(),
+            code: "InvalidArgument".to_string(),
+            message: message.to_string(),
             resource: "".to_string(),
             request_id: "".to_string(),
         },
@@ -132,6 +140,13 @@ fn s3error_to_error(error: &S3Error) -> Error {
             code: "KeyTooLong".to_string(),
             message: "Your key is too long.".to_string(),
             resource: key.to_string(),
+            request_id: "".to_string(),
+        },
+        S3Error::TooManyBuckets => Error {
+            status: http::StatusCode::FORBIDDEN.into(),
+            code: "TooManyBuckets".to_string(),
+            message: "You have attempted to create more buckets than allowed.".to_string(),
+            resource: "".to_string(),
             request_id: "".to_string(),
         },
         _ => Error {

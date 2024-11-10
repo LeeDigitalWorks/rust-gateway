@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, HashMap};
 
-use axum::{body::Bytes, http::Request};
+use axum::http::Request;
 use s3_core::S3Action;
 
 pub struct Result {
@@ -816,13 +816,6 @@ struct Route {
 }
 
 impl Route {
-    pub fn new() -> Self {
-        Route {
-            operation: S3Action::Unknown,
-            arguments: vec![],
-        }
-    }
-
     pub fn match_route(&self, req: &axum::http::Request<reqwest::Body>) -> bool {
         self.arguments.iter().all(|arg| arg(&req))
     }

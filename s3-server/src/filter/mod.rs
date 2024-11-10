@@ -1,5 +1,6 @@
 mod authentication;
 mod parser;
+mod rate_limiter;
 mod request_id;
 mod secret_key;
 mod types;
