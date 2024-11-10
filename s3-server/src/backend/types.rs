@@ -10,10 +10,23 @@ pub struct Bucket {
 pub struct Object {
     pub bucket_id: uuid::Uuid,
     pub key: String,
-    pub version: uuid::Uuid,
+    pub size: i64,
+    pub owner_id: i64,
+    pub version_id: uuid::Uuid,
     pub is_latest: bool,
     pub is_delete_marker: bool,
-    pub size: u64,
     pub last_modified: chrono::DateTime<chrono::Utc>,
     pub etag: String,
+}
+
+#[derive(Debug, Default)]
+pub struct Multipart {
+    pub bucket_id: uuid::Uuid,
+    pub object_id: uuid::Uuid,
+    pub upload_id: uuid::Uuid,
+}
+
+#[derive(Debug, Default)]
+pub struct Part {
+    pub bucket_id: uuid::Uuid,
 }

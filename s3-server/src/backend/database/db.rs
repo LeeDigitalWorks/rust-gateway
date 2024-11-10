@@ -7,6 +7,9 @@ pub trait DatabaseStore {
     async fn create_bucket(&self, bucket: types::Bucket) -> Result<(), sqlx::Error>;
     async fn list_buckets(&self, user_id: &i64) -> Result<Vec<types::Bucket>, sqlx::Error>;
     async fn delete_bucket(&self, bucket_name: &str, user_id: &i64) -> Result<(), sqlx::Error>;
+    async fn put_object(&self, object: types::Object) -> Result<(), sqlx::Error>;
+    async fn get_object(&self, key: &str) -> Result<types::Object, sqlx::Error>;
+    async fn list_objects(&self, bucket_id: uuid::Uuid) -> Result<Vec<types::Object>, sqlx::Error>;
 }
 
 pub struct Database {
@@ -63,5 +66,65 @@ impl DatabaseStore for Database {
         .execute(&self.pool)
         .await?;
         Ok(())
+    }
+
+    async fn put_object(&self, object: types::Object) -> Result<(), sqlx::Error> {
+        sqlx::query!(
+            r#"
+            INSERT INTO objects (bucket_id, key, size)
+            VALUES ($1, $2, $3)
+            "#,
+            object.bucket_id,
+            object.key,
+            object.size,
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    async fn get_object(&self, key: &str) -> Result<types::Object, sqlx::Error> {
+        let result = sqlx::query!(
+            r#"
+            SELECT bucket_id, key, size
+            FROM objects
+            WHERE key = $1
+            "#,
+            key
+        )
+        .fetch_one(&self.pool)
+        .await?;
+        Ok(types::Object {
+            bucket_id: result.bucket_id,
+            key: result.key,
+            size: result.size,
+            ..Default::default()
+        })
+    }
+
+    async fn list_objects(&self, bucket_id: uuid::Uuid) -> Result<Vec<types::Object>, sqlx::Error> {
+        let results = sqlx::query!(
+            r#"
+            SELECT bucket_id, key, size
+            FROM objects
+            WHERE bucket_id = $1
+            "#,
+            bucket_id
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        let mut objects = Vec::new();
+
+        for result in results {
+            objects.push(types::Object {
+                bucket_id: result.bucket_id,
+                key: result.key,
+                size: result.size,
+                ..Default::default()
+            });
+        }
+
+        Ok(objects)
     }
 }

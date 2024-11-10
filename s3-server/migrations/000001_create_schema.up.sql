@@ -26,6 +26,7 @@ CREATE TABLE buckets (
     versioning SMALLINT NOT NULL DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    to_delete_at TIMESTAMP WITH TIME ZONE, -- Tracks when the bucket should be deleted if not from S3 client
     mode INT DEFAULT NULL,
     storageprofile JSONB DEFAULT NULL,
     acl JSONB DEFAULT NULL,
@@ -33,25 +34,19 @@ CREATE TABLE buckets (
     lifecycle JSONB DEFAULT NULL,
     policy JSONB DEFAULT NULL,
     backend_specific_name TEXT,  -- Native name in the backend (e.g., CEPH bucket name)
-    migration_status JSONB DEFAULT NULL,  -- Track ongoing migrations
     UNIQUE(name)
 );
 
 -- Enhanced objects table
 CREATE TABLE objects (
-    id UUID PRIMARY KEY,
-    bucket_id UUID NOT NULL REFERENCES buckets(id),
-    name TEXT NOT NULL,
+    bucket_id UUID NOT NULL REFERENCES buckets(id) ON DELETE CASCADE,
+    key TEXT NOT NULL,
     size BIGINT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     version_id UUID NOT NULL,
-    version_number BIGINT NOT NULL,
     content_type TEXT NOT NULL,
     content_encoding TEXT,
-    content_disposition TEXT,
-    content_language TEXT,
-    cache_control TEXT,
     metadata JSONB,
     storage_class TEXT NOT NULL DEFAULT 'STANDARD',
     owner_id TEXT NOT NULL,
@@ -61,9 +56,9 @@ CREATE TABLE objects (
     backend_specific_name TEXT,  -- Native name in the backend (e.g., CEPH object name)
     backend_specific_id TEXT,    -- Backend-specific identifier
     is_latest BOOLEAN NOT NULL DEFAULT true,
-    deleted_at TIMESTAMP WITH TIME ZONE,
-    restore_expires_at TIMESTAMP WITH TIME ZONE  -- For glacier/archive restoration
-);
+    -- Composite primary key
+    PRIMARY KEY (bucket_id, key, version_id)
+) PARTITION BY LIST (bucket_id);
 
 -- Table for multipart uploads
 CREATE TABLE multipart_uploads (
@@ -121,8 +116,10 @@ CREATE TABLE backend_migrations (
 );
 
 -- Indexes for common queries and performance
-CREATE INDEX idx_objects_bucket_name ON objects(bucket_id, name);
-CREATE INDEX idx_objects_bucket_version ON objects(bucket_id, version_id);
+CREATE INDEX idx_objects_version ON objects(version_id);
+CREATE INDEX idx_objects_latest ON objects(bucket_id, key, is_latest) WHERE is_latest = true;
+CREATE INDEX idx_objects_backend_lookup ON objects(backend_specific_name, bucket_id);
+CREATE INDEX idx_objects_created_at ON objects(created_at);
 CREATE INDEX idx_multipart_uploads_bucket ON multipart_uploads(bucket_id);
 CREATE INDEX idx_lifecycle_rules_bucket ON lifecycle_rules(bucket_id);
 CREATE INDEX idx_backend_migrations_bucket ON backend_migrations(bucket_id);
