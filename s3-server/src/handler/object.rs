@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use tokio::sync::RwLock;
+use axum::response::IntoResponse;
 
 use crate::{
     filter::S3Data,
@@ -8,17 +8,11 @@ use crate::{
 };
 
 impl Server {
-    pub async fn put_object(
-        state: &Arc<AppState>,
-        data: S3Data,
-    ) -> axum::response::Response {
-        unimplemented!()
+    pub async fn put_object(state: &Arc<AppState>, data: S3Data) -> axum::response::Response {
+        s3_core::S3Error::NotImplemented.into_response()
     }
 
-    pub async fn get_object(
-        state: &Arc<AppState>,
-        data: S3Data,
-    ) -> axum::response::Response {
-        unimplemented!()
+    pub async fn get_object(state: &Arc<AppState>, data: S3Data) -> axum::response::Response {
+        s3_core::S3Error::NotImplemented.into_response()
     }
 }

@@ -3,7 +3,7 @@ use std::error::Error;
 use std::sync::Arc;
 
 use axum::extract::Request;
-use axum::response::Response;
+use axum::response::{IntoResponse, Response};
 use axum::routing::any;
 use axum::{extract::State, Router};
 use s3_core::S3Error;
@@ -20,7 +20,6 @@ use crate::filter::{
 
 pub struct Server {
     pub addr: String,
-    pub app_state: Arc<AppState>,
     pub router: Router,
 }
 
@@ -51,7 +50,6 @@ impl Server {
 
         let mut server = Server {
             addr,
-            app_state: Arc::clone(&app_state),
             router: Router::new(),
         };
 
@@ -66,7 +64,6 @@ impl Server {
 
     pub async fn start(self) -> Result<(), Box<dyn Error>> {
         let listener = tokio::net::TcpListener::bind(&self.addr).await.unwrap();
-        tracing::debug!("listening on {}", listener.local_addr().unwrap());
         axum::serve(listener, self.router)
             .with_graceful_shutdown(shutdown_signal())
             .await
@@ -98,7 +95,6 @@ impl Server {
                     );
                 }
             }
-            tracing::debug!(keys = ?new_keys, "Refreshed keys");
             let mut write_only = keys.write().await;
             *write_only = new_keys;
             drop(write_only);
@@ -115,7 +111,7 @@ impl Server {
         match state.filter_chain.run_filters(&mut data).await {
             Ok(_) => {}
             Err(e) => {
-                return axum::response::IntoResponse::into_response(e);
+                return e.into_response();
             }
         }
 
