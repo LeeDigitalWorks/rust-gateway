@@ -3,7 +3,7 @@ use std::sync::Arc;
 use axum::response::IntoResponse;
 
 use crate::{
-    backend::types,
+    backend::{types, IndexReader, IndexWriter},
     filter::S3Data,
     server::{AppState, Server},
 };
@@ -34,7 +34,6 @@ impl Server {
                         .unwrap_or_default(),
                     ..Default::default()
                 },
-                data.req.body(),
             )
             .await;
         tracing::info!("Put object response: {:?}", response);

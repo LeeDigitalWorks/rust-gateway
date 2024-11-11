@@ -3,16 +3,16 @@ use std::sync::Arc;
 use axum::async_trait;
 use s3_core::S3Error;
 
-use crate::backend::Indexer;
+use crate::backend::IndexReader;
 
 use super::{Filter, S3Data};
 
 pub struct BucketFilter {
-    indexer: Arc<Box<dyn Indexer>>,
+    indexer: Arc<Box<crate::backend::FullstackBackend>>,
 }
 
 impl BucketFilter {
-    pub fn new(indexer: Arc<Box<dyn Indexer>>) -> Self {
+    pub fn new(indexer: Arc<Box<crate::backend::FullstackBackend>>) -> Self {
         Self { indexer }
     }
 }

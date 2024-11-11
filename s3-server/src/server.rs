@@ -3,6 +3,7 @@ use std::error::Error;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
+use aws_sdk_s3::primitives::ByteStream;
 use axum::extract::{ConnectInfo, Request};
 use axum::response::{IntoResponse, Response};
 use axum::routing::any;
@@ -30,7 +31,7 @@ impl Server {
         addr: String,
         hosts: Vec<String>,
         client: s3_iam::iam::iam_client::IamClient<tonic::transport::Channel>,
-        backend: Arc<Box<dyn crate::backend::Indexer>>,
+        backend: Arc<Box<crate::backend::FullstackBackend>>,
         redis_client: redis::cluster::ClusterClient,
         local_rate_limiter: governor::DefaultKeyedRateLimiter<String>,
     ) -> Self {
@@ -52,7 +53,6 @@ impl Server {
         let filter_chain = Arc::new(FilterChain::new(filters));
         let app_state = Arc::new(AppState {
             backend,
-            keys,
             filter_chain,
         });
 
@@ -160,8 +160,7 @@ impl Server {
 }
 
 pub struct AppState {
-    pub backend: Arc<Box<dyn crate::backend::Indexer>>,
-    pub keys: Arc<RwLock<HashMap<String, Key>>>,
+    pub backend: Arc<Box<crate::backend::FullstackBackend>>,
     pub filter_chain: Arc<FilterChain>,
 }
 

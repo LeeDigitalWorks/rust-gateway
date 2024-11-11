@@ -14,7 +14,30 @@ mod router;
 mod server;
 mod signature;
 
-fn create_backend(config: &Config) -> Result<Box<dyn crate::backend::Indexer>, String> {
+fn create_storage(config: &Config) -> Box<crate::backend::storage::storage::StorageBackend> {
+    let access_key_id = std::env::var("AWS_ACCESS_KEY_ID").unwrap_or_default();
+    let secret_access_key = std::env::var("AWS_SECRET_ACCESS_KEY").unwrap_or_default();
+
+    tracing::debug!("Using AWS credentials: {}", access_key_id);
+
+    let sdk_config = aws_config::SdkConfig::builder()
+        .region(Region::new(config.region.clone()))
+        .endpoint_url("https://sfo3.digitaloceanspaces.com")
+        .credentials_provider(SharedCredentialsProvider::new(Credentials::new(
+            access_key_id,
+            secret_access_key,
+            None,
+            None,
+            "",
+        )))
+        .build();
+
+    let storage =
+        backend::storage::storage::StorageBackend::new(aws_sdk_s3::Client::new(&sdk_config));
+    Box::new(storage)
+}
+
+fn create_indexer(config: &Config) -> Result<Box<crate::backend::FullstackBackend>, String> {
     match config.meta_store.as_str() {
         "postgresdb" => {
             let conn_str = config
@@ -27,27 +50,9 @@ fn create_backend(config: &Config) -> Result<Box<dyn crate::backend::Indexer>, S
                 .connect_lazy(&conn_str)
                 .map_err(|e| format!("Failed to connect to postgres: {}", e))?;
 
-            let access_key_id = std::env::var("AWS_ACCESS_KEY_ID").unwrap_or_default();
-            let secret_access_key = std::env::var("AWS_SECRET_ACCESS_KEY").unwrap_or_default();
-
-            tracing::debug!("Using AWS credentials: {}", access_key_id);
-
-            let sdk_config = aws_config::SdkConfig::builder()
-                .region(Region::new(config.region.clone()))
-                .endpoint_url("https://sfo3.digitaloceanspaces.com")
-                .credentials_provider(SharedCredentialsProvider::new(Credentials::new(
-                    access_key_id,
-                    secret_access_key,
-                    None,
-                    None,
-                    "",
-                )))
-                .build();
-
             let postgres = backend::db::Database::new(pool);
-            let storage =
-                backend::storage::StorageBackend::new(aws_sdk_s3::Client::new(&sdk_config));
-            Ok(Box::new(backend::FullstackBackend::new(postgres, storage)))
+            let storage = create_storage(config);
+            Ok(Box::new(backend::FullstackBackend::new(postgres, *storage)))
         }
         _ => Err(format!("Unknown meta_store: {}", config.meta_store)),
     }
@@ -80,7 +85,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let endpoint = Endpoint::from_str(&config.iam_address)?;
     let iam_client = s3_iam::iampb::iam::iam_client::IamClient::new(endpoint.connect_lazy());
 
-    let backend = create_backend(&config)?;
+    let backend = create_indexer(&config)?;
 
     let redis_client = redis::cluster::ClusterClientBuilder::new(vec![config.redis_address])
         .username(config.redis_username.clone())

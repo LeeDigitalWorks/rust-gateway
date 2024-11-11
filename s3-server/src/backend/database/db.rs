@@ -9,7 +9,7 @@ pub trait DatabaseStore {
     async fn get_bucket(&self, bucket_name: &str) -> Result<types::Bucket, sqlx::Error>;
     async fn list_buckets(&self, user_id: &i64) -> Result<Vec<types::Bucket>, sqlx::Error>;
     async fn delete_bucket(&self, bucket_name: &str, user_id: &i64) -> Result<(), sqlx::Error>;
-    async fn put_object(&self, object: types::Object) -> Result<(), sqlx::Error>;
+    async fn put_object(&self, object: &types::Object) -> Result<(), sqlx::Error>;
     async fn get_object(&self, key: &str) -> Result<types::Object, sqlx::Error>;
     async fn list_objects(&self, bucket_id: uuid::Uuid) -> Result<Vec<types::Object>, sqlx::Error>;
 }
@@ -103,7 +103,7 @@ impl DatabaseStore for Database {
         Ok(())
     }
 
-    async fn put_object(&self, object: types::Object) -> Result<(), sqlx::Error> {
+    async fn put_object(&self, object: &types::Object) -> Result<(), sqlx::Error> {
         sqlx::query!(
             r#"
             INSERT INTO objects (bucket_id, key, size)

@@ -1,3 +1,4 @@
+use aws_sdk_s3::primitives::ByteStream;
 use axum::async_trait;
 use s3_core::{
     response::{ListBucketsResponse, ResponseData},
@@ -8,8 +9,8 @@ use uuid::{timestamp::context, Timestamp, Uuid};
 
 use crate::backend::{
     db::{Database, DatabaseStore},
+    storage::storage::StorageBackend,
     types::{self, Bucket},
-    StorageBackend,
 };
 
 pub struct FullstackBackend {
@@ -60,7 +61,7 @@ impl crate::backend::IndexReader for FullstackBackend {
         })
     }
 
-    async fn get_object(&self, bucket_name: &str, key: &str) -> Result<Vec<u8>, S3Error> {
+    async fn get_object(&self, bucket_name: &str, key: &str) -> Result<types::Object, S3Error> {
         Err(S3Error::NotImplemented)
     }
 
@@ -84,14 +85,18 @@ impl crate::backend::IndexReader for FullstackBackend {
 
 #[async_trait]
 impl crate::backend::IndexWriter for FullstackBackend {
-    async fn create_bucket(&self, bucket_name: &str, user_id: &i64) -> Result<ResponseData, S3Error> {
+    async fn create_bucket(
+        &self,
+        bucket_name: &str,
+        user_id: &i64,
+    ) -> Result<ResponseData, S3Error> {
         // Check if user has reached the maximum number of buckets
         let bucket_quota = self
             .database
             .get_bucket_quota(user_id)
             .await
             .map_err(|e| match e {
-                sqlx::Error::RowNotFound => S3Error::AccessDenied,
+                sqlx::Error::RowNotFound => S3Error::TooManyBuckets,
                 _ => {
                     tracing::error!("Error getting bucket quota: {:?}", e);
                     S3Error::InternalError
@@ -119,8 +124,9 @@ impl crate::backend::IndexWriter for FullstackBackend {
             })?;
         // Call proxy backend to create bucket
         self.storage.create_bucket(bucket_name, user_id).await?;
-        
-        Ok(ResponseData::new())
+        Ok(ResponseData::new()
+            .with_status_code(200)
+            .with_header("Location".to_string(), format!("/{}", bucket_name)))
     }
 
     async fn delete_bucket(&self, bucket: &types::Bucket, user_id: &i64) -> Result<(), S3Error> {
@@ -160,21 +166,14 @@ impl crate::backend::IndexWriter for FullstackBackend {
         &self,
         bucket: &types::Bucket,
         object: &types::Object,
-        data: &reqwest::Body,
     ) -> Result<(), S3Error> {
         tracing::debug!("Putting object: {}/{}", bucket.name, object.key);
         // Insert into database backend
-        self.database
-            .put_object(types::Object {
-                ..Default::default()
-            })
-            .await
-            .map_err(|e| {
-                tracing::error!("Error putting object: {:?}", e);
-                S3Error::InternalError
-            })?;
-
-        Err(S3Error::NotImplemented)
+        self.database.put_object(object).await.map_err(|e| {
+            tracing::error!("Error putting object: {:?}", e);
+            S3Error::InternalError
+        })?;
+        Ok(())
     }
 
     async fn delete_object(&self, bucket_name: &str, key: &str) -> Result<(), S3Error> {

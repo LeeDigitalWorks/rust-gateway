@@ -4,6 +4,7 @@ use axum::response::IntoResponse;
 use tokio::sync::RwLock;
 
 use crate::{
+    backend::{IndexReader, IndexWriter},
     filter::S3Data,
     server::{AppState, Server},
 };

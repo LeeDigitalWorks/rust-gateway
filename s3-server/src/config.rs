@@ -25,6 +25,15 @@ pub struct Config {
 impl Config {
     pub fn from_file(path: &str) -> Result<Self, Box<dyn Error>> {
         let contents = std::fs::read_to_string(path)?;
-        Ok(toml::from_str(&contents)?)
+        let mut config = toml::from_str(&contents)?;
+        config = Config::env_override(config)?;
+        Ok(config)
+    }
+
+    fn env_override(mut config: Config) -> Result<Self, Box<dyn Error>> {
+        if let Ok(postgresdb_info) = std::env::var("DATABASE_URL") {
+            config.postgresdb_info = Some(postgresdb_info);
+        }
+        Ok(config)
     }
 }
