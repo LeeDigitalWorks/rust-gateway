@@ -8,7 +8,7 @@ use uuid::{timestamp::context, Timestamp, Uuid};
 
 use crate::backend::{
     db::{Database, DatabaseStore},
-    types::Bucket,
+    types::{self, Bucket},
     StorageBackend,
 };
 
@@ -113,22 +113,36 @@ impl crate::backend::IndexWriter for FullstackBackend {
         Ok(())
     }
 
-    async fn delete_bucket(&self, bucket_name: &str, user_id: &i64) -> Result<(), S3Error> {
+    async fn delete_bucket(&self, bucket: types::Bucket, user_id: &i64) -> Result<(), S3Error> {
         // Check if bucket is not empty
-
-        // Delete bucket from database backend
-        self.postgres
-            .delete_bucket(bucket_name, user_id)
+        // TODO: Only check for at most one object in the bucket
+        let objects = self
+            .postgres
+            .list_objects(bucket.id)
             .await
             .map_err(|e| match e {
-                sqlx::Error::RowNotFound => S3Error::NoSuchBucket(bucket_name.to_string()),
+                sqlx::Error::RowNotFound => S3Error::NoSuchBucket(bucket.name.clone()),
+                _ => {
+                    tracing::error!("Error listing objects: {:?}", e);
+                    S3Error::InternalError
+                }
+            })?;
+        if !objects.is_empty() {
+            return Err(S3Error::BucketNotEmpty);
+        }
+        // Delete bucket from database backend
+        self.postgres
+            .delete_bucket(&bucket.name, user_id)
+            .await
+            .map_err(|e| match e {
+                sqlx::Error::RowNotFound => S3Error::NoSuchBucket(bucket.name.clone()),
                 _ => {
                     tracing::error!("Error deleting bucket: {:?}", e);
                     S3Error::InternalError
                 }
             })?;
         // Delete bucket from proxy backend
-        self.storage.delete_bucket(bucket_name, user_id).await?;
+        self.storage.delete_bucket(&bucket.name, user_id).await?;
         Ok(())
     }
 

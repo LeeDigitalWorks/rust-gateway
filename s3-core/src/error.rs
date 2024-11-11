@@ -19,6 +19,7 @@ pub enum S3Error {
     RequestTimeTooSkewed,
     SignatureDoesNotMatch,
     TooManyBuckets,
+    SlowDown,
 }
 
 #[derive(Serialize, Debug)]
@@ -146,6 +147,13 @@ fn s3error_to_error(error: &S3Error) -> Error {
             status: http::StatusCode::FORBIDDEN.into(),
             code: "TooManyBuckets".to_string(),
             message: "You have attempted to create more buckets than allowed.".to_string(),
+            resource: "".to_string(),
+            request_id: "".to_string(),
+        },
+        S3Error::SlowDown => Error {
+            status: http::StatusCode::SERVICE_UNAVAILABLE.into(),
+            code: "SlowDown".to_string(),
+            message: "Please reduce your request rate.".to_string(),
             resource: "".to_string(),
             request_id: "".to_string(),
         },

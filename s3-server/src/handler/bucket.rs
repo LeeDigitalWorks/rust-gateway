@@ -43,7 +43,7 @@ impl Server {
     pub async fn delete_bucket(state: &Arc<AppState>, data: S3Data) -> axum::response::Response {
         let response = state
             .backend
-            .delete_bucket(&data.bucket_name, &data.auth_key.user_id)
+            .delete_bucket(data.bucket.unwrap_or_default(), &data.auth_key.user_id)
             .await;
         match response {
             Ok(_) => {

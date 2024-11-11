@@ -4,7 +4,7 @@ use axum::async_trait;
 use s3_core::S3Error;
 use tokio::sync::RwLock;
 
-use crate::authz::Key;
+use crate::signature::Key;
 
 use super::{Filter, S3Data};
 

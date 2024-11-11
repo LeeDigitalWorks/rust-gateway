@@ -23,7 +23,7 @@ reserved_origins = "s3.test.com,s3-internal.test.com"
 # Meta Config
 meta_cache_type = 2
 meta_store = "postgresdb"
-postgresdb_info = "postgres://postgres:postgres@postgres:5432/rust_s3?sslmode=disable"
+postgresdb_info = "postgres://postgres:password@postgres:5432/defaultdb?sslmode=disable"
 keepalive = true
 enable_compression = false
 enable_usage_push = false
@@ -33,11 +33,8 @@ redis_connection_number = 10
 memory_cache_max_entry_count = 100000
 enable_data_cache = true
 redis_connect_timeout = 1
-redis_read_timeout = 1
+redis_read_timeout = 3
 redis_write_timeout = 1
-redis_keepalive = 60
-redis_pool_max_idle = 3
-redis_pool_idle_timeout = 30
 
 cache_circuit_check_interval = 3
 cache_circuit_close_sleep_window = 1
@@ -53,3 +50,16 @@ db_conn_max_life_seconds = 300
 download_buf_pool_size = 8388608 #8MB
 upload_min_chunk_size = 524288 #512KB
 upload_max_chunk_size = 8388608 #8MB
+
+# Storage Config
+[storage.do]
+endpoint = "https://digitaloceanspaces.com"
+regions = ["sfo3", "nyc3"]
+
+[storage.ceph-a]
+endpoint = "http://ceph-a:7480"
+zonename = "default"
+
+[storage.ceph-b]
+endpoint = "http://ceph-b:7480"
+zonename = "default"

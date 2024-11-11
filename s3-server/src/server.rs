@@ -12,10 +12,10 @@ use sync_wrapper::SyncStream;
 use tokio::signal::unix::{signal, SignalKind};
 use tokio::sync::RwLock;
 
-use crate::authz::{Authz, Key};
+use crate::signature::{SignatureValidator, Key};
 use crate::filter::{
-    AuthenticationFilter, Filter, FilterChain, ParserFilter, RequestIdFilter, S3Data,
-    SecretKeyFilter,
+    AuthenticationFilter, Filter, FilterChain, ParserFilter, RateLimitFilter, RequestIdFilter,
+    S3Data, SecretKeyFilter,
 };
 
 pub struct Server {
@@ -29,6 +29,8 @@ impl Server {
         hosts: Vec<String>,
         client: s3_iam::iam::iam_client::IamClient<tonic::transport::Channel>,
         backend: Arc<Box<dyn crate::backend::Indexer>>,
+        redis_client: redis::cluster::ClusterClient,
+        local_rate_limiter: governor::DefaultKeyedRateLimiter<String>,
     ) -> Self {
         let keys = Arc::new(RwLock::new(HashMap::new()));
 
@@ -37,9 +39,10 @@ impl Server {
 
         let filters: Vec<Box<dyn Filter>> = vec![
             Box::new(RequestIdFilter::new()),
-            Box::new(AuthenticationFilter::new(Authz::new(keys.clone()))),
+            Box::new(AuthenticationFilter::new(SignatureValidator::new(keys.clone()))),
             Box::new(ParserFilter::new(hosts)),
             Box::new(SecretKeyFilter::new(keys.clone())),
+            Box::new(RateLimitFilter::new(redis_client, local_rate_limiter)),
         ];
         let filter_chain = Arc::new(FilterChain::new(filters));
         let app_state = Arc::new(AppState {

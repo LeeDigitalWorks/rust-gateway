@@ -1,10 +1,8 @@
 use aws_sdk_s3::primitives::DateTime;
-use axum::async_trait;
-use s3_core::{
-    response::ListBucketsResponse,
-    types::{BucketContainer, Owner},
-    S3Error,
-};
+use aws_smithy_types_convert::date_time::DateTimeExt;
+use s3_core::S3Error;
+
+use crate::backend::types;
 
 pub struct StorageBackend {
     s3_client: aws_sdk_s3::Client,
@@ -17,38 +15,6 @@ impl StorageBackend {
 }
 
 impl StorageBackend {
-    async fn list_buckets(&self, _user_id: &i64) -> Result<ListBucketsResponse, S3Error> {
-        let resp = self.s3_client.list_buckets().send().await;
-        match resp {
-            Ok(resp) => {
-                let buckets = resp
-                    .buckets
-                    .unwrap_or_default()
-                    .iter()
-                    .map(|bucket| s3_core::Bucket {
-                        name: bucket.name.clone().unwrap_or_default(),
-                        creation_date: bucket
-                            .creation_date
-                            .clone()
-                            .unwrap_or(DateTime::from_secs(0))
-                            .to_string(),
-                    })
-                    .collect();
-                Ok(ListBucketsResponse {
-                    buckets: BucketContainer { buckets },
-                    owner: Owner {
-                        id: "1".to_string(),
-                        display_name: "1".to_string(),
-                    },
-                })
-            }
-            Err(e) => {
-                tracing::error!("Error listing buckets: {:?}", e);
-                Err(S3Error::InternalError)
-            }
-        }
-    }
-
     async fn get_object(&self, _bucket_name: &str, _key: &str) -> Result<Vec<u8>, S3Error> {
         Err(S3Error::NotImplemented)
     }

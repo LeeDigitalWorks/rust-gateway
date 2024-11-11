@@ -1,4 +1,4 @@
-use std::{str::FromStr, sync::Arc};
+use std::{num::NonZero, str::FromStr, sync::Arc, vec};
 
 use aws_config::Region;
 use aws_sdk_s3::config::{Credentials, SharedCredentialsProvider};
@@ -6,13 +6,13 @@ use config::Config;
 use tonic::transport::Endpoint;
 use tracing_subscriber::EnvFilter;
 
-mod authz;
 mod backend;
 mod config;
 mod filter;
 mod handler;
 mod router;
 mod server;
+mod signature;
 
 fn create_backend(config: &Config) -> Result<Box<dyn crate::backend::Indexer>, String> {
     match config.meta_store.as_str() {
@@ -49,7 +49,6 @@ fn create_backend(config: &Config) -> Result<Box<dyn crate::backend::Indexer>, S
                 backend::storage::StorageBackend::new(aws_sdk_s3::Client::new(&sdk_config));
             Ok(Box::new(backend::FullstackBackend::new(postgres, storage)))
         }
-        "memory" => Ok(Box::new(backend::InMemoryBackend::new())),
         _ => Err("Unknown meta store".into()),
     }
 }
@@ -81,12 +80,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let backend = create_backend(&config)?;
 
+    let redis_client = redis::cluster::ClusterClientBuilder::new(vec![config.redis_address])
+        .password(config.redis_password.clone())
+        .connection_timeout(std::time::Duration::from_secs(config.redis_connect_timeout))
+        .response_timeout(std::time::Duration::from_secs(config.redis_read_timeout))
+        .build()?;
+    let local_rate_limiter: governor::DefaultKeyedRateLimiter<String> =
+        governor::RateLimiter::keyed(governor::Quota::per_second(NonZero::new(10).unwrap()));
+
     tracing::info!("Starting server on {}", &config.bind_api_address);
     let server = server::Server::new(
         config.bind_api_address,
         config.s3domain,
         iam_client,
         Arc::new(backend),
+        redis_client,
+        local_rate_limiter,
     )
     .await;
     Ok(server.start().await?)

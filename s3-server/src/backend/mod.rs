@@ -17,14 +17,12 @@ pub trait IndexReader: Send + Sync {
 #[async_trait]
 pub trait IndexWriter: Send + Sync {
     async fn create_bucket(&self, bucket_name: &str, user_id: &i64) -> Result<(), S3Error>;
-    async fn delete_bucket(&self, bucket_name: &str, user_id: &i64) -> Result<(), S3Error>;
+    async fn delete_bucket(&self, bucket: types::Bucket, user_id: &i64) -> Result<(), S3Error>;
     async fn put_object(&self, bucket: &str, key: &str, data: Vec<u8>) -> Result<(), S3Error>;
     async fn delete_object(&self, bucket: &str, key: &str) -> Result<(), S3Error>;
     async fn delete_objects(&self, bucket: &str, keys: Vec<String>) -> Result<(), S3Error>;
 }
 
-pub mod memory;
-pub use memory::InMemoryBackend;
 pub mod storage;
 pub use storage::StorageBackend;
 pub mod database;

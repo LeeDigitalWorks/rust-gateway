@@ -1,16 +1,16 @@
 use axum::async_trait;
 use s3_core::S3Error;
 
-use crate::authz::Authz;
+use crate::signature::SignatureValidator;
 
 use super::{Filter, S3Data};
 
 pub struct AuthenticationFilter {
-    authz: Authz,
+    authz: SignatureValidator,
 }
 
 impl AuthenticationFilter {
-    pub fn new(authz: Authz) -> Self {
+    pub fn new(authz: SignatureValidator) -> Self {
         Self { authz }
     }
 }

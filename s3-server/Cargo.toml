@@ -6,14 +6,16 @@ edition = "2021"
 [dependencies]
 aws-config = { version = "1.5.10", features = ["behavior-version-latest"] }
 aws-sdk-s3 = { workspace = true }
+aws-smithy-types-convert = { version = "0.60.8", features = ["convert-chrono"] }
 axum = { workspace = true, features = ["multipart", "macros"] }
 base64 = "0.22.1"
 ceph = "3.2.5"
 chrono = { workspace = true }
 const-hex = "1.13.1"
+governor = "0.7.0"
 hmac = "0.12.1"
 md-5 = "0.10.6"
-redis = { version = "0.27.5", features = ["tokio-rustls-comp"] }
+redis = { version = "0.27.5", features = ["cluster-async", "tokio-rustls-comp"] }
 reqwest = { version = "0.12.9", features = ["stream"] }
 s3-core = { path = "../s3-core" }
 s3-iam = { path = "../s3-iam" }

@@ -128,3 +128,13 @@ CREATE INDEX idx_multipart_uploads_bucket ON multipart_uploads(bucket_id);
 CREATE INDEX idx_lifecycle_rules_bucket ON lifecycle_rules(bucket_id);
 CREATE INDEX idx_backend_migrations_bucket ON backend_migrations(bucket_id);
 CREATE INDEX idx_objects_backend_specific ON objects(backend_specific_name);
+
+CREATE TABLE rate_limits (
+    user_id BIGINT PRIMARY KEY,
+    rps INT NOT NULL DEFAULT 100,
+    dimension TEXT NOT NULL DEFAULT 'user_id', -- The dimension to rate limit on (e.g., user_id, bucket_id)
+    value INT NOT NULL, -- The value of the dimension
+    weight INT NOT NULL DEFAULT 1, -- The weight of the dimension (e.g., 1 for user_id, 10 for bucket_id)
+    exclusive BOOLEAN NOT NULL DEFAULT false, -- Whether the rate limit is exclusive to the dimension
+    UNIQUE(user_id, dimension, value)
+);
