@@ -12,6 +12,7 @@ base64 = "0.22.1"
 ceph = "3.2.5"
 chrono = { workspace = true }
 const-hex = "1.13.1"
+dotenv = { workspace = true }
 governor = "0.7.0"
 hmac = "0.12.1"
 md-5 = "0.10.6"
@@ -29,5 +30,5 @@ tokio = { workspace = true }
 toml = "0.8.19"
 tonic = { workspace = true }
 tracing = "0.1.40"
-tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
+tracing-subscriber = { version = "0.3.18", features = ["env-filter", "registry"] }
 uuid = { version = "1.11.0", features = ["fast-rng", "v4", "v7"] }

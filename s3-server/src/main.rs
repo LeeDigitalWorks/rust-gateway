@@ -49,12 +49,14 @@ fn create_backend(config: &Config) -> Result<Box<dyn crate::backend::Indexer>, S
                 backend::storage::StorageBackend::new(aws_sdk_s3::Client::new(&sdk_config));
             Ok(Box::new(backend::FullstackBackend::new(postgres, storage)))
         }
-        _ => Err("Unknown meta store".into()),
+        _ => Err(format!("Unknown meta_store: {}", config.meta_store)),
     }
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    dotenv::dotenv().ok();
+
     let config_path = std::env::var("CONFIG_PATH").unwrap_or_else(|_| "config.toml".to_string());
     let config = config::Config::from_file(&config_path)?;
 
@@ -81,6 +83,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let backend = create_backend(&config)?;
 
     let redis_client = redis::cluster::ClusterClientBuilder::new(vec![config.redis_address])
+        .username(config.redis_username.clone())
         .password(config.redis_password.clone())
         .connection_timeout(std::time::Duration::from_secs(config.redis_connect_timeout))
         .response_timeout(std::time::Duration::from_secs(config.redis_read_timeout))

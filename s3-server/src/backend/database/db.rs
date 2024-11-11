@@ -6,11 +6,7 @@ use crate::backend::types;
 pub trait DatabaseStore {
     async fn create_bucket(&self, bucket: types::Bucket) -> Result<(), sqlx::Error>;
     async fn get_bucket_quota(&self, user_id: &i64) -> Result<i64, sqlx::Error>;
-    async fn get_bucket(
-        &self,
-        bucket_name: &str,
-        user_id: &i64,
-    ) -> Result<types::Bucket, sqlx::Error>;
+    async fn get_bucket(&self, bucket_name: &str) -> Result<types::Bucket, sqlx::Error>;
     async fn list_buckets(&self, user_id: &i64) -> Result<Vec<types::Bucket>, sqlx::Error>;
     async fn delete_bucket(&self, bucket_name: &str, user_id: &i64) -> Result<(), sqlx::Error>;
     async fn put_object(&self, object: types::Object) -> Result<(), sqlx::Error>;
@@ -60,19 +56,14 @@ impl DatabaseStore for Database {
         Ok(())
     }
 
-    async fn get_bucket(
-        &self,
-        bucket_name: &str,
-        user_id: &i64,
-    ) -> Result<types::Bucket, sqlx::Error> {
+    async fn get_bucket(&self, bucket_name: &str) -> Result<types::Bucket, sqlx::Error> {
         let result = sqlx::query!(
             r#"
             SELECT id, name, user_id, created_at
             FROM buckets
-            WHERE name = $1 AND user_id = $2
+            WHERE name = $1
             "#,
-            bucket_name,
-            user_id
+            bucket_name
         )
         .fetch_one(&self.pool)
         .await?;

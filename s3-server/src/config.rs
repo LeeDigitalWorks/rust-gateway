@@ -16,6 +16,7 @@ pub struct Config {
     pub meta_store: String,
     pub postgresdb_info: Option<String>,
     pub redis_address: String,
+    pub redis_username: String,
     pub redis_password: String,
     pub redis_connect_timeout: u64,
     pub redis_read_timeout: u64,

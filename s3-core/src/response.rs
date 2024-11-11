@@ -21,6 +21,21 @@ impl ResponseData {
             headers: HashMap::new(),
         }
     }
+
+    pub fn with_bytes(mut self, bytes: Bytes) -> Self {
+        self.bytes = bytes;
+        self
+    }
+
+    pub fn with_status_code(mut self, status_code: u16) -> Self {
+        self.status_code = status_code;
+        self
+    }
+
+    pub fn with_header(mut self, key: String, value: String) -> Self {
+        self.headers.insert(key, value);
+        self
+    }
 }
 
 impl IntoResponse for ResponseData {
@@ -44,12 +59,13 @@ pub struct ListBucketsResponse {
     pub buckets: BucketContainer,
 }
 
-impl ListBucketsResponse {
-    pub fn into_response(&self) -> ResponseData {
+impl IntoResponse for ListBucketsResponse {
+    fn into_response(self) -> axum::response::Response<axum::body::Body> {
         ResponseData {
-            bytes: quick_xml::se::to_string(self).unwrap().into(),
+            bytes: quick_xml::se::to_string(&self).unwrap().into(),
             status_code: 200,
             headers: HashMap::new(),
         }
+        .into_response()
     }
 }

@@ -1,10 +1,12 @@
 use std::collections::HashMap;
 use std::error::Error;
+use std::net::SocketAddr;
 use std::sync::Arc;
 
-use axum::extract::Request;
+use axum::extract::{ConnectInfo, Request};
 use axum::response::{IntoResponse, Response};
 use axum::routing::any;
+use axum::Extension;
 use axum::{extract::State, Router};
 use s3_core::S3Error;
 use s3_iam::iam::StreamKeysRequest;
@@ -12,11 +14,11 @@ use sync_wrapper::SyncStream;
 use tokio::signal::unix::{signal, SignalKind};
 use tokio::sync::RwLock;
 
-use crate::signature::{SignatureValidator, Key};
 use crate::filter::{
-    AuthenticationFilter, Filter, FilterChain, ParserFilter, RateLimitFilter, RequestIdFilter,
-    S3Data, SecretKeyFilter,
+    AuthenticationFilter, BucketFilter, Filter, FilterChain, ParserFilter, RateLimitFilter,
+    RequestIdFilter, S3Data, SecretKeyFilter,
 };
+use crate::signature::{Key, SignatureValidator};
 
 pub struct Server {
     pub addr: String,
@@ -39,10 +41,13 @@ impl Server {
 
         let filters: Vec<Box<dyn Filter>> = vec![
             Box::new(RequestIdFilter::new()),
-            Box::new(AuthenticationFilter::new(SignatureValidator::new(keys.clone()))),
+            Box::new(AuthenticationFilter::new(SignatureValidator::new(
+                keys.clone(),
+            ))),
             Box::new(ParserFilter::new(hosts)),
-            Box::new(SecretKeyFilter::new(keys.clone())),
             Box::new(RateLimitFilter::new(redis_client, local_rate_limiter)),
+            Box::new(SecretKeyFilter::new(keys.clone())),
+            Box::new(BucketFilter::new(backend.clone())),
         ];
         let filter_chain = Arc::new(FilterChain::new(filters));
         let app_state = Arc::new(AppState {
@@ -67,10 +72,14 @@ impl Server {
 
     pub async fn start(self) -> Result<(), Box<dyn Error>> {
         let listener = tokio::net::TcpListener::bind(&self.addr).await.unwrap();
-        axum::serve(listener, self.router)
-            .with_graceful_shutdown(shutdown_signal())
-            .await
-            .map_err(Into::into)
+        axum::serve(
+            listener,
+            self.router
+                .into_make_service_with_connect_info::<SocketAddr>(),
+        )
+        .with_graceful_shutdown(shutdown_signal())
+        .await
+        .map_err(Into::into)
     }
 
     async fn refresh_keys(
@@ -106,11 +115,19 @@ impl Server {
         }
     }
 
-    async fn handle_request(State(state): State<Arc<AppState>>, req: Request) -> Response {
+    async fn handle_request(
+        State(state): State<Arc<AppState>>,
+        ConnectInfo(addr): ConnectInfo<SocketAddr>,
+        req: Request,
+    ) -> Response {
         let req =
             req.map(|body| reqwest::Body::wrap_stream(SyncStream::new(body.into_data_stream())));
         let mut data = S3Data::new();
         data.req = req;
+        data.req.headers_mut().insert(
+            "x-real-ip",
+            reqwest::header::HeaderValue::from_str(&addr.ip().to_string()).unwrap(),
+        );
         match state.filter_chain.run_filters(&mut data).await {
             Ok(_) => {}
             Err(e) => {
@@ -121,19 +138,19 @@ impl Server {
         // TODO: Route to the correct handler
         match data.action {
             s3_core::S3Action::ListBuckets => {
-                return Self::list_buckets(&state, data).await;
+                return Self::list_buckets(&state, &mut data).await;
             }
             s3_core::S3Action::CreateBucket => {
-                return Self::create_bucket(&state, data).await;
+                return Self::create_bucket(&state, &mut data).await;
             }
             s3_core::S3Action::DeleteBucket => {
-                return Self::delete_bucket(&state, data).await;
+                return Self::delete_bucket(&state, &mut data).await;
             }
             s3_core::S3Action::PutObject => {
-                return Self::put_object(&state, data).await;
+                return Self::put_object(&state, &mut data).await;
             }
             s3_core::S3Action::GetObject => {
-                return Self::get_object(&state, data).await;
+                return Self::get_object(&state, &mut data).await;
             }
             _ => {
                 return axum::response::IntoResponse::into_response(S3Error::NotImplemented);

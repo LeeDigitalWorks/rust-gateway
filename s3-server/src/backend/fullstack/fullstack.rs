@@ -1,6 +1,6 @@
 use axum::async_trait;
 use s3_core::{
-    response::ListBucketsResponse,
+    response::{ListBucketsResponse, ResponseData},
     types::{BucketContainer, Owner},
     S3Error,
 };
@@ -13,13 +13,13 @@ use crate::backend::{
 };
 
 pub struct FullstackBackend {
-    postgres: Database,
+    database: Database,
     storage: StorageBackend,
 }
 
 impl FullstackBackend {
-    pub fn new(postgres: Database, storage: StorageBackend) -> Self {
-        Self { postgres, storage }
+    pub fn new(database: Database, storage: StorageBackend) -> Self {
+        Self { database, storage }
     }
 }
 
@@ -28,9 +28,18 @@ impl crate::backend::Indexer for FullstackBackend {}
 
 #[async_trait]
 impl crate::backend::IndexReader for FullstackBackend {
+    async fn get_bucket(&self, bucket_name: &str) -> Result<types::Bucket, S3Error> {
+        let bucket = self
+            .database
+            .get_bucket(bucket_name)
+            .await
+            .map_err(|_| S3Error::NoSuchBucket(bucket_name.to_string()))?;
+        Ok(bucket)
+    }
+
     async fn list_buckets(&self, user_id: &i64) -> Result<ListBucketsResponse, S3Error> {
         let buckets = self
-            .postgres
+            .database
             .list_buckets(user_id)
             .await
             .map_err(|_| S3Error::InternalError)?;
@@ -75,10 +84,10 @@ impl crate::backend::IndexReader for FullstackBackend {
 
 #[async_trait]
 impl crate::backend::IndexWriter for FullstackBackend {
-    async fn create_bucket(&self, bucket_name: &str, user_id: &i64) -> Result<(), S3Error> {
+    async fn create_bucket(&self, bucket_name: &str, user_id: &i64) -> Result<ResponseData, S3Error> {
         // Check if user has reached the maximum number of buckets
         let bucket_quota = self
-            .postgres
+            .database
             .get_bucket_quota(user_id)
             .await
             .map_err(|e| match e {
@@ -88,7 +97,7 @@ impl crate::backend::IndexWriter for FullstackBackend {
                     S3Error::InternalError
                 }
             })?;
-        let buckets = self.postgres.list_buckets(user_id).await.map_err(|e| {
+        let buckets = self.database.list_buckets(user_id).await.map_err(|e| {
             tracing::error!("Error listing buckets: {:?}", e);
             S3Error::InternalError
         })?;
@@ -96,7 +105,7 @@ impl crate::backend::IndexWriter for FullstackBackend {
             return Err(S3Error::TooManyBuckets);
         }
         // Call database backend to create bucket
-        self.postgres
+        self.database
             .create_bucket(Bucket {
                 id: Uuid::new_v7(Timestamp::now(context::NoContext)),
                 name: bucket_name.to_string(),
@@ -110,14 +119,15 @@ impl crate::backend::IndexWriter for FullstackBackend {
             })?;
         // Call proxy backend to create bucket
         self.storage.create_bucket(bucket_name, user_id).await?;
-        Ok(())
+        
+        Ok(ResponseData::new())
     }
 
-    async fn delete_bucket(&self, bucket: types::Bucket, user_id: &i64) -> Result<(), S3Error> {
+    async fn delete_bucket(&self, bucket: &types::Bucket, user_id: &i64) -> Result<(), S3Error> {
         // Check if bucket is not empty
         // TODO: Only check for at most one object in the bucket
         let objects = self
-            .postgres
+            .database
             .list_objects(bucket.id)
             .await
             .map_err(|e| match e {
@@ -131,7 +141,7 @@ impl crate::backend::IndexWriter for FullstackBackend {
             return Err(S3Error::BucketNotEmpty);
         }
         // Delete bucket from database backend
-        self.postgres
+        self.database
             .delete_bucket(&bucket.name, user_id)
             .await
             .map_err(|e| match e {
@@ -146,7 +156,24 @@ impl crate::backend::IndexWriter for FullstackBackend {
         Ok(())
     }
 
-    async fn put_object(&self, bucket_name: &str, key: &str, data: Vec<u8>) -> Result<(), S3Error> {
+    async fn put_object(
+        &self,
+        bucket: &types::Bucket,
+        object: &types::Object,
+        data: &reqwest::Body,
+    ) -> Result<(), S3Error> {
+        tracing::debug!("Putting object: {}/{}", bucket.name, object.key);
+        // Insert into database backend
+        self.database
+            .put_object(types::Object {
+                ..Default::default()
+            })
+            .await
+            .map_err(|e| {
+                tracing::error!("Error putting object: {:?}", e);
+                S3Error::InternalError
+            })?;
+
         Err(S3Error::NotImplemented)
     }
 
