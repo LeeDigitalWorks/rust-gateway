@@ -27,7 +27,7 @@ postgresdb_info = "postgres://postgres:password@postgres:5432/defaultdb?sslmode=
 keepalive = true
 enable_compression = false
 enable_usage_push = false
-redis_address = "redis:6379"
+redis_address = "redis://127.0.0.1"
 redis_password = "hehehehe"
 redis_connection_number = 10
 memory_cache_max_entry_count = 100000
