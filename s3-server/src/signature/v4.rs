@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use axum::{extract::Request, http::HeaderMap};
 
-use crate::authz::v4_utils::sum_sha256;
+use crate::signature::v4_utils::sum_sha256;
 
 use super::v4_utils::hmac_sha256;
 

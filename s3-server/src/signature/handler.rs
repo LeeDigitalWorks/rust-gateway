@@ -44,11 +44,11 @@ fn get_auth_type(req: &Request<reqwest::Body>) -> AuthType {
     AuthType::Unknown
 }
 
-pub struct Authz {
+pub struct SignatureValidator {
     pub keys: Arc<RwLock<HashMap<String, Key>>>,
 }
 
-impl Authz {
+impl SignatureValidator {
     pub fn new(keys: Arc<RwLock<HashMap<String, Key>>>) -> Self {
         Self { keys }
     }

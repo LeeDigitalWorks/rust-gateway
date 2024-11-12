@@ -4,6 +4,7 @@ use axum::response::IntoResponse;
 pub enum S3Error {
     AccessDenied,
     AuthorizationHeaderMalformed,
+    BucketAlreadyOwnedByYou(String),
     BucketAlreadyExists(String),
     BucketNotEmpty,
     KeyTooLong(String),
@@ -19,6 +20,7 @@ pub enum S3Error {
     RequestTimeTooSkewed,
     SignatureDoesNotMatch,
     TooManyBuckets,
+    SlowDown,
 }
 
 #[derive(Serialize, Debug)]
@@ -42,6 +44,13 @@ fn s3error_to_error(error: &S3Error) -> Error {
             code: "AccessDenied".to_string(),
             message: "Access Denied".to_string(),
             resource: "".to_string(),
+            request_id: "".to_string(),
+        },
+        S3Error::BucketAlreadyOwnedByYou(bucket) => Error {
+            status: http::StatusCode::CONFLICT.into(),
+            code: "AlreadyOwnedByYou".to_string(),
+            message: format!("Your previous request to create the named bucket succeeded and you already own it. Bucket name: '{}'", bucket),
+            resource: bucket.to_string(),
             request_id: "".to_string(),
         },
         S3Error::BucketAlreadyExists(bucket) => Error {
@@ -146,6 +155,13 @@ fn s3error_to_error(error: &S3Error) -> Error {
             status: http::StatusCode::FORBIDDEN.into(),
             code: "TooManyBuckets".to_string(),
             message: "You have attempted to create more buckets than allowed.".to_string(),
+            resource: "".to_string(),
+            request_id: "".to_string(),
+        },
+        S3Error::SlowDown => Error {
+            status: http::StatusCode::SERVICE_UNAVAILABLE.into(),
+            code: "SlowDown".to_string(),
+            message: "Please reduce your request rate.".to_string(),
             resource: "".to_string(),
             request_id: "".to_string(),
         },

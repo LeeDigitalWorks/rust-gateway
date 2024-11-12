@@ -6,7 +6,7 @@ use axum::{
 };
 use s3_core::{response::ResponseData, S3Action, S3Error};
 
-use crate::{authz::Key, backend::types};
+use crate::{signature::Key, backend::types};
 #[async_trait]
 pub trait Filter: Send + Sync {
     async fn handle(&self, data: &mut S3Data) -> Result<(), S3Error>;
