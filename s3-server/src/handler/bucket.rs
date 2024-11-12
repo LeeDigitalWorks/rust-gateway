@@ -1,10 +1,8 @@
 use std::sync::Arc;
 
 use axum::response::IntoResponse;
-use tokio::sync::RwLock;
 
 use crate::{
-    backend::{IndexReader, IndexWriter},
     filter::S3Data,
     server::{AppState, Server},
 };
@@ -14,7 +12,7 @@ impl Server {
         state: &Arc<AppState>,
         data: &mut S3Data,
     ) -> axum::response::Response {
-        let response = state.backend.list_buckets(&data.auth_key.user_id).await;
+        let response = state.fullstack.list_buckets(data).await;
         axum::response::IntoResponse::into_response(response)
     }
 
@@ -22,10 +20,7 @@ impl Server {
         state: &Arc<AppState>,
         data: &mut S3Data,
     ) -> axum::response::Response {
-        let response = state
-            .backend
-            .create_bucket(&data.bucket_name, &data.auth_key.user_id)
-            .await;
+        let response = state.fullstack.create_bucket(data).await;
         axum::response::IntoResponse::into_response(response)
     }
 
@@ -33,18 +28,7 @@ impl Server {
         state: &Arc<AppState>,
         data: &mut S3Data,
     ) -> axum::response::Response {
-        let bucket = data
-            .bucket
-            .as_ref()
-            .ok_or(s3_core::S3Error::NoSuchBucket(data.bucket_name.clone()));
-        if let Err(e) = bucket {
-            return e.into_response();
-        }
-        let bucket = bucket.unwrap();
-        let response = state
-            .backend
-            .delete_bucket(bucket, &data.auth_key.user_id)
-            .await;
+        let response = state.fullstack.delete_bucket(data).await;
         axum::response::IntoResponse::into_response(response)
     }
 }

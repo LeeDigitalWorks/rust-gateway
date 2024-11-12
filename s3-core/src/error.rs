@@ -4,6 +4,7 @@ use axum::response::IntoResponse;
 pub enum S3Error {
     AccessDenied,
     AuthorizationHeaderMalformed,
+    AlreadyOwnedByYou(String),
     BucketAlreadyExists(String),
     BucketNotEmpty,
     KeyTooLong(String),
@@ -43,6 +44,13 @@ fn s3error_to_error(error: &S3Error) -> Error {
             code: "AccessDenied".to_string(),
             message: "Access Denied".to_string(),
             resource: "".to_string(),
+            request_id: "".to_string(),
+        },
+        S3Error::AlreadyOwnedByYou(bucket) => Error {
+            status: http::StatusCode::CONFLICT.into(),
+            code: "AlreadyOwnedByYou".to_string(),
+            message: format!("Your previous request to create the named bucket succeeded and you already own it. Bucket name: '{}'", bucket),
+            resource: bucket.to_string(),
             request_id: "".to_string(),
         },
         S3Error::BucketAlreadyExists(bucket) => Error {

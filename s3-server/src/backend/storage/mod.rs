@@ -4,7 +4,7 @@ use axum::async_trait;
 use s3_core::S3Error;
 
 #[async_trait]
-pub trait FileStorage {
+pub trait FileStorage: Send + Sync {
     async fn get_file(&self, bucket: &str, key: &str) -> Result<ByteStream, S3Error>;
     async fn get_file_range(
         &self,
