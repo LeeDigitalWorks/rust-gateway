@@ -21,7 +21,7 @@ CREATE TABLE buckets (
     id UUID PRIMARY KEY,
     name VARCHAR(63) NOT NULL,
     user_id BIGINT NOT NULL,
-    backend_id UUID NOT NULL REFERENCES storage_backends(id),
+    -- backend_id UUID NOT NULL REFERENCES storage_backends(id),
     versioning SMALLINT NOT NULL DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
@@ -49,7 +49,7 @@ CREATE TABLE objects (
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     version_id UUID NOT NULL,
-    content_type TEXT NOT NULL,
+    content_type TEXT,
     content_encoding TEXT,
     metadata JSONB,
     storage_class TEXT NOT NULL DEFAULT 'STANDARD',
@@ -62,7 +62,7 @@ CREATE TABLE objects (
     is_latest BOOLEAN NOT NULL DEFAULT true,
     -- Composite primary key
     PRIMARY KEY (bucket_id, key, version_id)
-) PARTITION BY LIST (bucket_id);
+);
 
 -- Table for multipart uploads
 CREATE TABLE multipart_uploads (
@@ -124,10 +124,10 @@ CREATE INDEX idx_objects_version ON objects(version_id);
 CREATE INDEX idx_objects_latest ON objects(bucket_id, key, is_latest) WHERE is_latest = true;
 CREATE INDEX idx_objects_backend_lookup ON objects(backend_specific_name, bucket_id);
 CREATE INDEX idx_objects_created_at ON objects(created_at);
+CREATE INDEX idx_objects_backend_specific ON objects(backend_specific_name);
 CREATE INDEX idx_multipart_uploads_bucket ON multipart_uploads(bucket_id);
 CREATE INDEX idx_lifecycle_rules_bucket ON lifecycle_rules(bucket_id);
 CREATE INDEX idx_backend_migrations_bucket ON backend_migrations(bucket_id);
-CREATE INDEX idx_objects_backend_specific ON objects(backend_specific_name);
 
 CREATE TABLE rate_limits (
     user_id BIGINT PRIMARY KEY,

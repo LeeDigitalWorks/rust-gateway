@@ -3,7 +3,6 @@ use std::sync::Arc;
 use axum::response::IntoResponse;
 
 use crate::{
-    backend::{types, IndexReader, IndexWriter},
     filter::S3Data,
     server::{AppState, Server},
 };

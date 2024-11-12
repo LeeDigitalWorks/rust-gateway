@@ -1,3 +1,4 @@
+use aws_sdk_s3::primitives::ByteStream;
 use s3_core::{
     response::{ListBucketsResponse, ResponseData},
     types::{BucketContainer, Owner},
@@ -31,14 +32,14 @@ impl FullstackBackend {
         if bucket.is_some() {
             if let Some(bucket) = bucket {
                 if bucket.user_id == data.auth_key.user_id {
-                    return Err(S3Error::AlreadyOwnedByYou(data.bucket_name.clone()));
+                    return Err(S3Error::BucketAlreadyOwnedByYou(data.bucket_name.clone()));
                 }
             }
             return Err(S3Error::BucketAlreadyExists(data.bucket_name.clone()));
         }
         self.database
             .create_bucket(&Bucket {
-                id: Uuid::new_v7(Timestamp::now(context::NoContext)),
+                id: Uuid::now_v7(),
                 name: data.bucket_name.clone(),
                 user_id: data.auth_key.user_id,
                 created_at: chrono::Utc::now(),
@@ -90,15 +91,22 @@ impl FullstackBackend {
     }
 
     pub async fn put_object(&self, data: &mut S3Data) -> Result<ResponseData, S3Error> {
+        tracing::debug!("Put object req: {:?}", data.req);
+
         let bucket = data
             .bucket
             .as_ref()
             .ok_or(S3Error::NoSuchBucket(data.bucket_name.clone()))?;
 
+        let body = data.req.body();
+        // Compute ETag for object
+
         let object = types::Object {
             bucket_id: bucket.id,
             key: data.key.clone(),
             owner_id: data.auth_key.user_id,
+            version_id: Uuid::now_v7(),
+            is_latest: true,
             size: data
                 .req
                 .headers()

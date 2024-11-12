@@ -1,19 +1,8 @@
 use axum::async_trait;
 
-use crate::backend::{types, IndexReader, IndexWriter, Indexer};
+use crate::backend::{types, IndexReader, Indexer};
 
-pub struct Database {
-    pool: sqlx::PgPool,
-}
-
-impl Database {
-    pub fn new(pool: sqlx::PgPool) -> Self {
-        Self { pool }
-    }
-}
-
-#[async_trait]
-impl Indexer for Database {}
+use super::Database;
 
 #[async_trait]
 impl IndexReader for Database {
@@ -66,8 +55,7 @@ impl IndexReader for Database {
     }
 
     async fn list_buckets(&self, user_id: &i64) -> Result<Vec<types::Bucket>, sqlx::Error> {
-        sqlx::query_as!(
-            types::Bucket,
+        let results = sqlx::query!(
             r#"
             SELECT id, name, user_id, created_at
             FROM buckets
@@ -76,7 +64,16 @@ impl IndexReader for Database {
             user_id
         )
         .fetch_all(&self.pool)
-        .await
+        .await?;
+        Ok(results
+            .iter()
+            .map(|result| types::Bucket {
+                id: result.id,
+                name: result.name.clone(),
+                user_id: result.user_id,
+                created_at: result.created_at,
+            })
+            .collect())
     }
 
     async fn get_object(
@@ -114,95 +111,14 @@ impl IndexReader for Database {
         )
         .fetch_all(&self.pool)
         .await?;
-
-        let mut objects = Vec::new();
-
-        for result in results {
-            objects.push(types::Object {
+        Ok(results
+            .iter()
+            .map(|result| types::Object {
                 bucket_id: result.bucket_id,
-                key: result.key,
+                key: result.key.clone(),
                 size: result.size,
                 ..Default::default()
-            });
-        }
-
-        Ok(objects)
-    }
-}
-
-#[async_trait]
-impl IndexWriter for Database {
-    async fn delete_object(&self, bucket: &str, key: &str) -> Result<(), sqlx::Error> {
-        sqlx::query!(
-            r#"
-            DELETE FROM objects
-            WHERE bucket_id = (SELECT id FROM buckets WHERE name = $1) AND key = $2
-            "#,
-            bucket,
-            key
-        )
-        .execute(&self.pool)
-        .await?;
-        Ok(())
-    }
-
-    async fn delete_objects(&self, bucket: &str, keys: Vec<String>) -> Result<(), sqlx::Error> {
-        for key in keys {
-            self.delete_object(bucket, &key).await?;
-        }
-        Ok(())
-    }
-
-    async fn create_bucket(&self, bucket: &types::Bucket) -> Result<(), sqlx::Error> {
-        sqlx::query_as!(
-            types::Bucket,
-            r#"
-            INSERT INTO buckets (id, name, user_id)
-            VALUES ($1, $2, $3)
-            "#,
-            bucket.id,
-            bucket.name,
-            bucket.user_id
-        )
-        .execute(&self.pool)
-        .await?;
-        Ok(())
-    }
-
-    async fn delete_bucket(
-        &self,
-        bucket: &types::Bucket,
-        user_id: &i64,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query!(
-            r#"
-            DELETE FROM buckets
-            WHERE id = $1 AND user_id = $2
-            "#,
-            bucket.id,
-            user_id
-        )
-        .execute(&self.pool)
-        .await?;
-        Ok(())
-    }
-
-    async fn put_object(
-        &self,
-        bucket: &types::Bucket,
-        object: &types::Object,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query!(
-            r#"
-            INSERT INTO objects (bucket_id, key, size)
-            VALUES ($1, $2, $3)
-            "#,
-            bucket.id,
-            object.key,
-            object.size,
-        )
-        .execute(&self.pool)
-        .await?;
-        Ok(())
+            })
+            .collect())
     }
 }

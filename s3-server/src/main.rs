@@ -50,7 +50,7 @@ fn create_indexer(config: &Config) -> Result<Box<crate::backend::FullstackBacken
                 .connect_lazy(&conn_str)
                 .map_err(|e| format!("Failed to connect to postgres: {}", e))?;
 
-            let postgres = Box::new(backend::db_reader::Database::new(pool));
+            let postgres = Box::new(backend::Database::new(pool));
             let storage = create_storage(config);
             Ok(Box::new(backend::FullstackBackend::new(postgres, storage)))
         }

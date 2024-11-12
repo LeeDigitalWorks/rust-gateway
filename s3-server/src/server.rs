@@ -4,10 +4,10 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 
 use aws_sdk_s3::primitives::ByteStream;
+use axum::body::Body;
 use axum::extract::{ConnectInfo, Request};
 use axum::response::{IntoResponse, Response};
 use axum::routing::any;
-use axum::Extension;
 use axum::{extract::State, Router};
 use s3_core::S3Error;
 use s3_iam::iam::StreamKeysRequest;
@@ -118,10 +118,11 @@ impl Server {
     async fn handle_request(
         State(state): State<Arc<AppState>>,
         ConnectInfo(addr): ConnectInfo<SocketAddr>,
-        req: Request,
+        req: Request<Body>,
     ) -> Response {
         let req =
             req.map(|body| reqwest::Body::wrap_stream(SyncStream::new(body.into_data_stream())));
+
         let mut data = S3Data::new();
         data.req = req;
         data.req.headers_mut().insert(

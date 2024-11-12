@@ -38,3 +38,16 @@ pub trait IndexWriter: Send + Sync {
     async fn delete_object(&self, bucket: &str, key: &str) -> Result<(), sqlx::Error>;
     async fn delete_objects(&self, bucket: &str, keys: Vec<String>) -> Result<(), sqlx::Error>;
 }
+
+#[async_trait]
+impl Indexer for Database {}
+
+pub struct Database {
+  pub pool: sqlx::PgPool,
+}
+
+impl Database {
+  pub fn new(pool: sqlx::PgPool) -> Self {
+      Self { pool }
+  }
+}
