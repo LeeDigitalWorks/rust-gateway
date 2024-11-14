@@ -3,8 +3,6 @@ use std::sync::Arc;
 use axum::async_trait;
 use s3_core::S3Error;
 
-use crate::backend::IndexReader;
-
 use super::{Filter, S3Data};
 
 pub struct BucketFilter {

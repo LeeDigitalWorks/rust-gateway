@@ -1,5 +1,5 @@
 // Maximum object part size for multipart upload
-static MAX_OBJECT_PART_SIZE: u64 = 5 * 1024 * 1024 * 1024; // 5GB
+pub static MAX_OBJECT_PART_SIZE: usize = 5 * 1024 * 1024 * 1024; // 5GB
 
 // https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html
 pub fn is_valid_bucket_name(b: &str) -> bool {

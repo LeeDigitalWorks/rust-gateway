@@ -1,4 +1,5 @@
-use aws_sdk_s3::primitives::ByteStream;
+use aws_sdk_s3::primitives::{ByteStream, SdkBody};
+use md5::Digest;
 use s3_core::{
     response::{ListBucketsResponse, ResponseData},
     types::{BucketContainer, Owner},
@@ -49,9 +50,12 @@ impl FullstackBackend {
                 tracing::error!("Error creating bucket: {:?}", e);
                 S3Error::InternalError
             })?;
-        Ok(ResponseData::new()
-            .with_status_code(200)
-            .with_header("Location".to_string(), format!("/{}", data.bucket_name)))
+
+        data.res
+            .with_header("Location".to_string(), format!("/{}", data.bucket_name));
+        data.res.with_status_code(200);
+
+        Ok(data.res.clone())
     }
 
     pub async fn delete_bucket(&self, data: &mut S3Data) -> Result<ResponseData, S3Error> {
@@ -87,19 +91,50 @@ impl FullstackBackend {
                     S3Error::InternalError
                 }
             })?;
-        Ok(ResponseData::new().with_status_code(204))
+
+        data.res.with_status_code(204);
+        Ok(data.res.clone())
     }
 
     pub async fn put_object(&self, data: &mut S3Data) -> Result<ResponseData, S3Error> {
-        tracing::debug!("Put object req: {:?}", data.req);
-
         let bucket = data
             .bucket
             .as_ref()
             .ok_or(S3Error::NoSuchBucket(data.bucket_name.clone()))?;
 
-        let body = data.req.body();
+        let content_length: i64 = data
+            .req
+            .headers()
+            .get("Content-Length")
+            .and_then(|v| v.to_str().ok())
+            .and_then(|v| v.parse().ok())
+            .unwrap_or_default();
+
+        let expect = data
+            .req
+            .headers()
+            .get("Expect")
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or_default();
+        if expect == "100-continue" {
+            data.res.with_status_code(100);
+            return Ok(data.res.clone());
+        }
+
         // Compute ETag for object
+        let bytes = data.req.body();
+        let mut hasher = md5::Md5::new();
+        hasher.update(bytes);
+        let etag = const_hex::encode(hasher.finalize().to_vec());
+        let body = ByteStream::new(bytes.to_owned().into());
+
+        // Validate Content-Length
+        if content_length > s3_core::MAX_OBJECT_PART_SIZE as i64 {
+            return Err(S3Error::EntityTooLarge);
+        }
+        if content_length < 0 {
+            return Err(S3Error::MissingContentLength);
+        }
 
         let object = types::Object {
             bucket_id: bucket.id,
@@ -107,13 +142,8 @@ impl FullstackBackend {
             owner_id: data.auth_key.user_id,
             version_id: Uuid::now_v7(),
             is_latest: true,
-            size: data
-                .req
-                .headers()
-                .get("Content-Length")
-                .and_then(|v| v.to_str().ok())
-                .and_then(|v| v.parse().ok())
-                .unwrap_or_default(),
+            size: content_length,
+            etag: etag.clone(),
             ..Default::default()
         };
 
@@ -126,7 +156,14 @@ impl FullstackBackend {
                 S3Error::InternalError
             })?;
         // Insert into storage backend
-        Ok(ResponseData::new().with_status_code(200))
+        // self.storage
+        //     .save_file(&bucket.name, &object.key, body)
+        //     .await?;
+
+        data.res
+            .with_status_code(200)
+            .with_header("ETag".to_string(), etag);
+        Ok(data.res.clone())
     }
 
     pub async fn delete_object(&self, data: &mut S3Data) -> Result<ResponseData, S3Error> {

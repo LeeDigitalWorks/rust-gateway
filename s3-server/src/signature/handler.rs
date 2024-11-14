@@ -1,8 +1,7 @@
 use std::{collections::HashMap, sync::Arc};
 
-use axum::extract::Request;
+use axum::{body::Bytes, extract::Request};
 use s3_core::S3Error;
-use s3_iam::iam::GetKeyRequest;
 use tokio::sync::RwLock;
 
 use super::{
@@ -24,7 +23,7 @@ enum AuthType {
     Signedv2,
 }
 
-fn is_signature(req: &Request<reqwest::Body>) -> (bool, AuthType) {
+fn is_signature(req: &Request<Bytes>) -> (bool, AuthType) {
     let auth_header = req.headers().get("Authorization");
     if let Some(auth_header) = auth_header {
         let auth_header = auth_header.to_str().unwrap();
@@ -36,7 +35,7 @@ fn is_signature(req: &Request<reqwest::Body>) -> (bool, AuthType) {
     (false, AuthType::Unknown)
 }
 
-fn get_auth_type(req: &Request<reqwest::Body>) -> AuthType {
+fn get_auth_type(req: &Request<Bytes>) -> AuthType {
     if let (true, auth_type) = is_signature(req) {
         return auth_type;
     }
@@ -53,7 +52,7 @@ impl SignatureValidator {
         Self { keys }
     }
 
-    pub async fn check(&self, req: &Request<reqwest::Body>) -> Result<Key, S3Error> {
+    pub async fn check(&self, req: &Request<Bytes>) -> Result<Key, S3Error> {
         match get_auth_type(req) {
             AuthType::SignedV4 => match self.check_signature_header_match_v4(req).await {
                 Ok(key) => Ok(key),
@@ -73,7 +72,7 @@ impl SignatureValidator {
 
     pub async fn check_signature_header_match_v4(
         &self,
-        req: &Request<reqwest::Body>,
+        req: &Request<Bytes>,
     ) -> Result<Key, s3_core::S3Error> {
         let auth_string = req
             .headers()

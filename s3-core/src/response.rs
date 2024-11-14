@@ -6,11 +6,11 @@ use serde_derive::Deserialize;
 
 use crate::types::{BucketContainer, Owner};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ResponseData {
-    bytes: Bytes,
-    status_code: u16,
-    headers: HashMap<String, String>,
+    pub bytes: Bytes,
+    pub status_code: u16,
+    pub headers: HashMap<String, String>,
 }
 
 impl ResponseData {
@@ -22,17 +22,17 @@ impl ResponseData {
         }
     }
 
-    pub fn with_bytes(mut self, bytes: Bytes) -> Self {
+    pub fn with_bytes(&mut self, bytes: Bytes) -> &mut Self {
         self.bytes = bytes;
         self
     }
 
-    pub fn with_status_code(mut self, status_code: u16) -> Self {
+    pub fn with_status_code(&mut self, status_code: u16) -> &mut Self {
         self.status_code = status_code;
         self
     }
 
-    pub fn with_header(mut self, key: String, value: String) -> Self {
+    pub fn with_header(&mut self, key: String, value: String) -> &mut Self {
         self.headers.insert(key, value);
         self
     }

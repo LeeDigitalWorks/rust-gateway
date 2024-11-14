@@ -15,7 +15,6 @@ const-hex = "1.13.1"
 dotenv = { workspace = true }
 governor = "0.7.0"
 hmac = "0.12.1"
-http-body-util = "0.1.2"
 md-5 = "0.10.6"
 redis = { version = "0.27.5", features = ["cluster-async", "tokio-rustls-comp"] }
 reqwest = { version = "0.12.9", features = ["stream"] }
@@ -26,9 +25,7 @@ serde_json = "1.0.132"
 sha2 = "0.10.8"
 sqlx = { version = "0.8", features = [ "runtime-tokio", "tls-native-tls", "uuid", "chrono", "json", "postgres" ] }
 subtle = "2.6.1"
-sync_wrapper = { version = "1.0.1", features = ["futures"] }
 tokio = { workspace = true }
-tokio-util = { version = "0.7.12", features = ["io"] }
 toml = "0.8.19"
 tonic = { workspace = true }
 tracing = "0.1.40"
