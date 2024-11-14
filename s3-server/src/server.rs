@@ -3,15 +3,13 @@ use std::error::Error;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
-use aws_sdk_s3::primitives::ByteStream;
-use axum::body::Body;
+use axum::body::to_bytes;
 use axum::extract::{ConnectInfo, Request};
 use axum::response::{IntoResponse, Response};
 use axum::routing::any;
 use axum::{extract::State, Router};
 use s3_core::S3Error;
 use s3_iam::iam::StreamKeysRequest;
-use sync_wrapper::SyncStream;
 use tokio::signal::unix::{signal, SignalKind};
 use tokio::sync::RwLock;
 
@@ -118,12 +116,24 @@ impl Server {
     async fn handle_request(
         State(state): State<Arc<AppState>>,
         ConnectInfo(addr): ConnectInfo<SocketAddr>,
-        req: Request<Body>,
+        req: Request,
     ) -> Response {
-        let req =
-            req.map(|body| reqwest::Body::wrap_stream(SyncStream::new(body.into_data_stream())));
-
         let mut data = S3Data::new();
+
+        let (parts, body) = req.into_parts();
+        let body = to_bytes(body, s3_core::MAX_OBJECT_PART_SIZE)
+            .await
+            .map_err(|e| {
+                tracing::error!("Error reading body: {:?}", e);
+                S3Error::MaxMessageLengthExceeded
+            });
+        let body = match body {
+            Ok(body) => body,
+            Err(e) => {
+                return e.into_response();
+            }
+        };
+        let req = axum::http::Request::from_parts(parts, body);
         data.req = req;
         data.req.headers_mut().insert(
             "x-real-ip",

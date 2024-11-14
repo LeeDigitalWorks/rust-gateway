@@ -1,7 +1,5 @@
 use std::sync::Arc;
 
-use axum::response::IntoResponse;
-
 use crate::{
     filter::S3Data,
     server::{AppState, Server},

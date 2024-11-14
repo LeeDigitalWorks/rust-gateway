@@ -1,20 +1,16 @@
 use std::sync::Arc;
 
-use axum::{
-    async_trait,
-    body::{Body, Bytes},
-};
+use axum::{async_trait, body::Bytes};
 use s3_core::{response::ResponseData, S3Action, S3Error};
 
-use crate::{signature::Key, backend::types};
+use crate::{backend::types, signature::Key};
 #[async_trait]
 pub trait Filter: Send + Sync {
     async fn handle(&self, data: &mut S3Data) -> Result<(), S3Error>;
 }
 
-#[derive(Debug)]
 pub struct S3Data {
-    pub req: axum::http::Request<reqwest::Body>,
+    pub req: axum::http::Request<Bytes>,
     pub res: ResponseData,
 
     // Request ID
@@ -40,7 +36,7 @@ pub struct S3Data {
 impl S3Data {
     pub fn new() -> Self {
         Self {
-            req: axum::http::Request::new(reqwest::Body::default()),
+            req: axum::http::Request::new(Bytes::default()),
             res: ResponseData::new(),
             request_id: "".to_string(),
             auth_key: Key {
